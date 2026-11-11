@@ -1,0 +1,338 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><title>Publications and Works</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: filter panel on top, grey results bar, then entries grouped by year.
+   Look follows the faculty site: white ground, burgundy outline controls with a pale pink active state, Open Sans.
+   One light theme by choice, because the page sits inside the site's light pages. */
+:root {
+  --bg: #FFFFFF;
+  --ink: #363636;
+  --muted: #6A6469;
+  --line: #E6E0E2;
+  --line-strong: #C9B6BC;
+  --brand: #9B2441;
+  --brand-ink: #640013;
+  --brand-soft: #FFF5F6;
+  --bar: #F3EFF0;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+h1 { margin: 0; font-size: 1.625rem; line-height: 1.25; font-weight: 700; color: var(--brand-ink); text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--muted); font-size: 0.9375rem; }
+.sample { margin: 10px 0 0; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--brand-soft); color: var(--brand-ink); font-size: 0.8125rem; }
+
+.panel { display: flex; flex-direction: column; gap: 14px; }
+label, .lbl { display: block; margin-bottom: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+input[type=search], select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: 6px; padding: 10px 12px; min-height: 44px;
+}
+select { appearance: auto; }
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.field { min-width: 0; }
+
+.tabs, .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab, .chip {
+  font: inherit; font-size: 0.875rem; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--brand); border-radius: 6px; padding: 8px 12px; min-height: 40px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.chip { font-size: 0.8125rem; min-height: 36px; padding: 6px 10px; }
+.tab[aria-pressed="true"], .chip[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand-ink); border-color: var(--brand-ink); font-weight: 600; box-shadow: 0 1px 4px rgba(100, 0, 19, 0.18); }
+.tab:disabled, .chip:disabled { border-color: var(--line); color: var(--muted); cursor: default; }
+.n { font-size: 0.75rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+[aria-pressed="true"] > .n { color: var(--brand-ink); }
+
+.bar { background: var(--bar); border-radius: 4px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bar p { margin: 0; font-size: 0.9375rem; display: flex; align-items: center; gap: 10px; }
+.badge { display: inline-flex; min-width: 26px; height: 22px; padding: 0 8px; align-items: center; justify-content: center; border-radius: 999px; background: var(--brand); color: #fff; font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.linkbtn { font: inherit; font-size: 0.875rem; color: var(--brand); background: none; border: 0; padding: 6px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+#list { display: flex; flex-direction: column; }
+.year { margin: 18px 0 2px; display: flex; align-items: center; gap: 12px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.08em; color: var(--brand-ink); }
+.year::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.year:first-child { margin-top: 4px; }
+.pub { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.pub:last-child { border-bottom: 0; }
+.ico { width: 40px; height: 40px; border: 1px solid var(--line-strong); border-radius: 50%; display: grid; place-items: center; color: var(--brand); }
+.ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.title { margin: 0; font-size: 1rem; line-height: 1.4; font-weight: 600; overflow-wrap: anywhere; text-wrap: pretty; }
+.authors { margin: 0; font-size: 0.875rem; overflow-wrap: anywhere; }
+.staff { font: inherit; color: var(--brand); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.staff[aria-pressed="true"] { font-weight: 700; color: var(--brand-ink); }
+.source { margin: 0; font-size: 0.875rem; color: var(--muted); overflow-wrap: anywhere; }
+.venue { font-style: italic; color: var(--ink); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-top: 6px; }
+.tag { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line-strong); color: var(--muted); }
+.tag.kind { border-color: var(--brand); color: var(--brand-ink); }
+.act { font: inherit; font-size: 0.8125rem; color: var(--brand); background: none; border: 0; padding: 4px 2px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.fallback { width: 100%; margin-top: 6px; font: inherit; font-size: 0.8125rem; color: var(--ink); border: 1px solid var(--line-strong); border-radius: 6px; padding: 8px; min-height: 64px; }
+.empty { margin: 24px 0; color: var(--muted); }
+.more { align-self: center; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--brand-ink); background: var(--bg); border: 1px solid var(--brand); border-radius: 6px; padding: 10px 20px; min-height: 44px; cursor: pointer; }
+@media (max-width: 480px) { .pub { grid-template-columns: minmax(0, 1fr); } .ico { display: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Publications &amp; Works</h1>
+    <p class="lede" id="lede"></p>
+    <p class="sample" id="sample" hidden>Sample entries from three staff profiles, shown to preview the layout. The full list will replace them.</p>
+  </header>
+
+  <section class="panel" aria-label="Filters">
+    <div class="field">
+      <label for="q">Search</label>
+      <input id="q" type="search" placeholder="Title, author or journal" autocomplete="off">
+    </div>
+    <div>
+      <span class="lbl" id="typelbl">Type</span>
+      <div class="tabs" id="types" role="group" aria-labelledby="typelbl"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="staff">Staff member</label><select id="staff"></select></div>
+      <div class="field"><label for="year">Year</label><select id="year"></select></div>
+      <div class="field">
+        <label for="sort">Sort by</label>
+        <select id="sort">
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="title">Title A to Z</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <span class="lbl" id="idxlbl">Indexed in</span>
+      <div class="chips" id="idx" role="group" aria-labelledby="idxlbl"></div>
+    </div>
+  </section>
+
+  <div class="bar">
+    <p><span class="badge" id="count">0</span><span id="countlbl">publications</span></p>
+    <button class="linkbtn" id="clear" type="button" hidden>Clear filters</button>
+  </div>
+  <div id="list" aria-live="polite"></div>
+  <button class="more" id="more" type="button" hidden>Show more</button>
+</div>
+
+<script>
+const SAMPLE = true;   // set to false once the full list replaces the sample entries
+const PAGE = 25;
+
+const TYPES = [
+  { k: 'article', label: 'Articles', one: 'Article' },
+  { k: 'conference', label: 'Conference Papers', one: 'Conference paper' },
+  { k: 'book', label: 'Books', one: 'Book' },
+  { k: 'chapter', label: 'Book Chapters', one: 'Book chapter' },
+  { k: 'review', label: 'Reviews & Compilations', one: 'Review / compilation' }
+];
+const ICONS = {
+  article: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/>',
+  conference: '<path d="M4 5h16v10h-9l-4 4v-4H4z"/><path d="M8 9h8M8 12h5"/>',
+  book: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/>',
+  chapter: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+  review: '<path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/>'
+};
+const INDEXES = ['SCI-E', 'SSCI', 'AHCI', 'ESCI', 'Scopus', 'TRDizin', 'Other'];
+
+/* Staff members are linked to their author names with `s`. Everyone else is plain text. */
+const ST = { oz: 'İhsan Övge Öztürk', bk: 'Rahime Eymen Bakır', gk: 'H. Göktaş' };
+const au = (n, s) => (s ? { n, s } : { n });
+const PUBS = [
+  { type: 'article', year: 2026, title: 'A Brief Analysis of Interpolation in Universal Algebraic Logic', authors: [au('Öztürk I. Ö.', ST.oz)], venue: 'FELSEFE ARKIVI = ARCHIVES OF PHILOSOPHY', idx: [], tags: ['Peer-reviewed'] },
+  { type: 'article', year: 2026, title: 'More On Modal Logics and Deduction', authors: [au('Öztürk I. Ö.', ST.oz), au('Gyenis Z.'), au('Molnar Z.')], venue: 'BULLETIN OF THE SECTION OF LOGIC', idx: ['ESCI', 'Scopus'] },
+  { type: 'article', year: 2026, title: 'Different perspectives of the same phenomenon: a study of adapting The Religious Attribution Scale to Turkish Muslim culture', authors: [au('Bakır R. E.', ST.bk), au('Vural M. E.'), au('Ayten A.')], venue: 'MENTAL HEALTH, RELIGION & CULTURE', vol: '29', no: '6', pages: '561–573', idx: ['ESCI', 'Scopus'] },
+  { type: 'conference', year: 2026, title: 'Antik ve Orta Çağ Aristotelesçi Mantık Metinlerinde Epistemolojinin Disiplinler Sınırları', authors: [au('Göktaş H.', ST.gk)], venue: 'II. Ulusal Mantık Sempozyumu Programı', extra: 'Muğla, Turkey, 21–22 May 2026', idx: [], tags: ['Full text'] },
+  { type: 'article', year: 2025, title: "'Ayn al-Quḍāt al-Hamadānī's Criticisms of Philosophers", authors: [au('Göktaş H.', ST.gk)], venue: 'Türkiye İlahiyat Araştırmaları Dergisi', vol: '9', no: '4', pages: '1679–1701', idx: ['TRDizin'] },
+  { type: 'article', year: 2025, title: 'Sacred Strength: The Role of Motivational Religiosity in Developing Mental Toughness in Sport', authors: [au('Bakır R. E.', ST.bk)], venue: 'JOURNAL OF SAKARYA UNIVERSITY FACULTY OF THEOLOGY (SAUIFD)', vol: '27', no: '2', pages: '294–309', idx: ['ESCI', 'TRDizin'] },
+  { type: 'article', year: 2024, title: 'Amalgamation and Robinson property in universal algebraic logic', authors: [au('Gyenis Z.'), au('Öztürk Ö.', ST.oz)], venue: 'Logic Journal of the IGPL', vol: '32', no: '1', pages: '180–196', idx: ['SCI-E', 'Scopus'] },
+  { type: 'article', year: 2024, title: "Mehmet Emin Şirvânî'nin Metafizik Meselelere Bakışı", authors: [au('Göktaş H.', ST.gk)], venue: 'Temaşa Erciyes Üniversitesi Felsefe Bölümü Dergisi', no: '22', pages: '88–104', idx: ['TRDizin'] },
+  { type: 'article', year: 2024, title: "İbn Rüşd'de Duyumsama", authors: [au('Göktaş H.', ST.gk)], venue: 'Bozok Üniversitesi İlahiyat Fakültesi Dergisi', vol: '25', no: '25', pages: '307–332', idx: ['TRDizin'] },
+  { type: 'article', year: 2023, title: 'The Modelwise Interpolation Property of Semantic Logics', authors: [au('Gyenis Z.'), au('Molnár Z.'), au('Öztürk Ö.', ST.oz)], venue: 'Bulletin of the Section of Logic', vol: '52', no: '1', pages: '58–83', idx: ['Scopus'] },
+  { type: 'article', year: 2023, title: 'SUBALGEBRA INDEPENDENCE', authors: [au('Öztürk I. Ö.', ST.oz)], venue: 'MATHEMATICAL REPORTS', vol: '254', no: '25(4)', idx: ['SCI-E', 'Scopus'] },
+  { type: 'article', year: 2022, title: "Notes on Localizing Craig's Interpolation Theorem", authors: [au('Öztürk I. Ö.', ST.oz)], venue: 'Elpis Filozófiatudományi Folyóirat', no: '7/1', pages: '73–103', idx: [], tags: ['Peer-reviewed'] },
+  { type: 'article', year: 2021, title: 'Sporcuların Yaşam Doyumlarının Yordayıcıları Olarak Bireysel Dindarlık, Maneviyat, Alçakgönüllülük ve Kaygı', authors: [au('Ayten A.'), au('Bakır R. E.', ST.bk)], venue: 'JOURNAL OF ACADEMIC RESEARCHES IN RELIGIOUS SCIENCES', vol: '21', no: '2', pages: '589–612', idx: ['ESCI'] },
+  { type: 'conference', year: 2019, title: "Sühreverdî'nin Nur Heykelleri Adlı Risalesi Üzerine Yazılan İki Şerhin Karşılaştırılması", authors: [au('Göktaş H.', ST.gk)], venue: 'Türkiye Lisans Üstü Çalışmalar Kongresi', extra: 'İstanbul, Turkey, 24–27 April 2019', vol: '4', pages: '441–549', idx: [], tags: ['Full text'] },
+  { type: 'article', year: 2018, title: '6-15 July 2018 Classical Thought School Graduate Program Intoduction', authors: [au('Göktaş H.', ST.gk)], venue: 'Bozok Üniversitesi İlahiyat Fakültesi Dergisi', vol: '14', no: '14', pages: '447–453', idx: ['TRDizin'] },
+  { type: 'article', year: 2013, title: 'Geleneğin Genel Kabulü ve Yenileşmenin OlumsuzEtkilerinin Nesih Konusuna Yansıması', authors: [au('Göktaş H.', ST.gk)], venue: 'Erciyes Üniversitesi İlahiyat Fakültesi Dergisi', idx: ['TRDizin'] }
+];
+
+/* ---- helpers ---- */
+const $ = id => document.getElementById(id);
+const norm = s => (s || '').replace(/\s+/g, ' ').trim();
+const fold = s => norm(s).replace(/ı/g, 'i').replace(/İ/g, 'I').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const SMALL = new Set(['of', 'the', 'and', 'in', 'on', 'for', 'to', 'a', 'an', 'at', 'by', 'or', 'with']);
+function tidy(s) {   // fixes ALL-CAPS strings from the source system, leaves normal text alone
+  if (!s || s !== s.toUpperCase() || s === s.toLowerCase()) return s;
+  const tr = /[İŞĞÜÖÇ]/.test(s);
+  const lc = w => tr ? w.toLocaleLowerCase('tr') : w.toLowerCase();
+  const uc = w => tr ? w.toLocaleUpperCase('tr') : w.toUpperCase();
+  return s.split(' ').map((w, i) => {
+    if (/^\(.*\)$/.test(w)) return w;
+    const l = lc(w);
+    if (i > 0 && SMALL.has(l)) return l;
+    return uc(l.charAt(0)) + l.slice(1);
+  }).join(' ');
+}
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+const typeOf = k => TYPES.find(t => t.k === k);
+const idxOf = p => (p.idx && p.idx.length ? p.idx : ['Other']);
+
+PUBS.forEach((p, i) => {
+  p.id = i;
+  p.titleT = tidy(p.title); p.venueT = tidy(p.venue);
+  p.hay = fold([p.titleT, p.venueT, p.year, (p.authors || []).map(a => a.n + ' ' + (a.s || '')).join(' ')].join(' '));
+});
+const STAFF = [...new Set(PUBS.flatMap(p => p.authors.map(a => a.s).filter(Boolean)))].sort((a, b) => a.localeCompare(b, 'en'));
+const YEARS = [...new Set(PUBS.map(p => p.year))].sort((a, b) => b - a);
+
+/* ---- state ---- */
+const S = { q: '', type: '', staff: '', year: '', sort: 'new', idx: new Set(), shown: PAGE };
+
+function matches(p, omit) {
+  if (omit !== 'type' && S.type && p.type !== S.type) return false;
+  if (omit !== 'staff' && S.staff && !p.authors.some(a => a.s === S.staff)) return false;
+  if (omit !== 'year' && S.year && String(p.year) !== S.year) return false;
+  if (omit !== 'idx' && S.idx.size && !idxOf(p).some(x => S.idx.has(x))) return false;
+  if (S.q) { const q = fold(S.q); if (!q.split(' ').every(w => p.hay.includes(w))) return false; }
+  return true;
+}
+const filtered = () => PUBS.filter(p => matches(p));
+const anyFilter = () => !!(S.q || S.type || S.staff || S.year || S.idx.size);
+
+function sorted(list) {
+  const out = list.slice();
+  if (S.sort === 'title') return out.sort((a, b) => a.titleT.localeCompare(b.titleT, 'en'));
+  return out.sort((a, b) => (S.sort === 'old' ? a.year - b.year : b.year - a.year) || a.titleT.localeCompare(b.titleT, 'en'));
+}
+
+/* ---- rendering ---- */
+function renderControls() {
+  const tb = $('types'); tb.textContent = '';
+  const mk = (key, label, n, pressed, onClick) => {
+    const b = el('button', 'tab'); b.type = 'button'; b.setAttribute('aria-pressed', String(pressed));
+    b.append(el('span', null, label), el('span', 'n', n));
+    if (n === 0 && !pressed) b.disabled = true;
+    b.addEventListener('click', onClick); return b;
+  };
+  tb.appendChild(mk('', 'All', PUBS.filter(p => matches(p, 'type')).length, !S.type, () => { S.type = ''; S.shown = PAGE; render(); }));
+  TYPES.forEach(t => tb.appendChild(mk(t.k, t.label, PUBS.filter(p => p.type === t.k && matches(p, 'type')).length, S.type === t.k, () => { S.type = S.type === t.k ? '' : t.k; S.shown = PAGE; render(); })));
+
+  const ib = $('idx'); ib.textContent = '';
+  INDEXES.forEach(x => {
+    const n = PUBS.filter(p => idxOf(p).includes(x) && matches(p, 'idx')).length;
+    const b = el('button', 'chip'); b.type = 'button'; b.setAttribute('aria-pressed', String(S.idx.has(x)));
+    b.append(el('span', null, x), el('span', 'n', n));
+    if (n === 0 && !S.idx.has(x)) b.disabled = true;
+    b.addEventListener('click', () => { S.idx.has(x) ? S.idx.delete(x) : S.idx.add(x); S.shown = PAGE; render(); });
+    ib.appendChild(b);
+  });
+
+  const fill = (sel, opts, value) => { sel.textContent = ''; opts.forEach(([v, t]) => { const o = el('option', null, t); o.value = v; sel.appendChild(o); }); sel.value = value; };
+  fill($('staff'), [['', 'All staff'], ...STAFF.map(s => [s, s + ' (' + PUBS.filter(p => p.authors.some(a => a.s === s) && matches(p, 'staff')).length + ')'])], S.staff);
+  fill($('year'), [['', 'All years'], ...YEARS.map(y => [String(y), y + ' (' + PUBS.filter(p => p.year === y && matches(p, 'year')).length + ')'])], S.year);
+}
+
+function citation(p) {
+  const a = p.authors.map(x => x.n).join(', ');
+  let src = p.venueT;
+  if (p.extra) src += ', ' + p.extra;
+  if (p.vol) src += ', ' + p.vol + (p.no ? '(' + p.no + ')' : '');
+  else if (p.no) src += ', no. ' + p.no;
+  if (p.pages) src += ', ' + p.pages;
+  return a + ' (' + p.year + '). ' + p.titleT + '. ' + src + '.';
+}
+
+function renderEntry(p) {
+  const art = el('article', 'pub');
+  const ico = el('div', 'ico'); ico.setAttribute('aria-hidden', 'true');
+  ico.innerHTML = '<svg viewBox="0 0 24 24">' + ICONS[p.type] + '</svg>';
+  const body = el('div', 'body');
+  body.appendChild(el('h3', 'title', p.titleT));
+
+  const au_ = el('p', 'authors');
+  p.authors.forEach((a, i) => {
+    if (i) au_.appendChild(document.createTextNode(', '));
+    if (a.s) {
+      const b = el('button', 'staff', a.n); b.type = 'button'; b.title = 'Show all by ' + a.s;
+      b.setAttribute('aria-pressed', String(S.staff === a.s));
+      b.addEventListener('click', () => { S.staff = S.staff === a.s ? '' : a.s; S.shown = PAGE; render(); });
+      au_.appendChild(b);
+    } else au_.appendChild(document.createTextNode(a.n));
+  });
+  body.appendChild(au_);
+
+  const src = el('p', 'source');
+  src.appendChild(el('span', 'venue', p.venueT));
+  const bits = [];
+  if (p.extra) bits.push(p.extra);
+  if (p.vol) bits.push('vol. ' + p.vol);
+  if (p.no) bits.push('no. ' + p.no);
+  if (p.pages) bits.push('pp. ' + p.pages);
+  bits.push(String(p.year));
+  src.appendChild(document.createTextNode(', ' + bits.join(', ')));
+  body.appendChild(src);
+
+  const meta = el('div', 'meta');
+  meta.appendChild(el('span', 'tag kind', typeOf(p.type).one));
+  (p.idx || []).forEach(x => meta.appendChild(el('span', 'tag', x)));
+  (p.tags || []).forEach(x => meta.appendChild(el('span', 'tag', x)));
+  if (p.url) { const l = el('a', 'act', 'Open'); l.href = p.url; l.target = '_blank'; l.rel = 'noopener'; meta.appendChild(l); }
+  const cp = el('button', 'act', 'Copy citation'); cp.type = 'button';
+  const fb = el('textarea', 'fallback'); fb.hidden = true; fb.readOnly = true;
+  cp.addEventListener('click', async () => {
+    const t = citation(p);
+    try { await navigator.clipboard.writeText(t); fb.hidden = true; cp.textContent = 'Copied'; setTimeout(() => { cp.textContent = 'Copy citation'; }, 1500); }
+    catch (e) { fb.value = t; fb.hidden = false; fb.focus(); fb.select(); cp.textContent = 'Copy the selected text'; }
+  });
+  meta.appendChild(cp);
+  body.append(meta, fb);
+  art.append(ico, body);
+  return art;
+}
+
+function renderList() {
+  const root = $('list'); root.textContent = '';
+  const all = sorted(filtered());
+  $('count').textContent = all.length;
+  $('countlbl').textContent = all.length === 1 ? 'publication' : 'publications';
+  $('clear').hidden = !anyFilter();
+  if (!all.length) { root.appendChild(el('p', 'empty', 'No publications match these filters.')); $('more').hidden = true; return; }
+  const part = all.slice(0, S.shown);
+  let last = null;
+  part.forEach(p => {
+    if (S.sort !== 'title' && p.year !== last) { root.appendChild(el('h2', 'year', String(p.year))); last = p.year; }
+    root.appendChild(renderEntry(p));
+  });
+  const left = all.length - part.length;
+  $('more').hidden = left <= 0;
+  $('more').textContent = 'Show more (' + left + ' remaining)';
+}
+function render() { renderControls(); renderList(); }
+
+/* ---- init ---- */
+(function init() {
+  $('lede').textContent = PUBS.length + ' publications by ' + STAFF.length + ' staff members';
+  $('sample').hidden = !SAMPLE;
+  $('q').addEventListener('input', e => { S.q = e.target.value; S.shown = PAGE; render(); });
+  $('staff').addEventListener('change', e => { S.staff = e.target.value; S.shown = PAGE; render(); });
+  $('year').addEventListener('change', e => { S.year = e.target.value; S.shown = PAGE; render(); });
+  $('sort').addEventListener('change', e => { S.sort = e.target.value; S.shown = PAGE; renderList(); });
+  $('clear').addEventListener('click', () => { S.q = ''; S.type = ''; S.staff = ''; S.year = ''; S.idx.clear(); S.shown = PAGE; $('q').value = ''; render(); });
+  $('more').addEventListener('click', () => { S.shown += PAGE; renderList(); });
+  render();
+})();
+</script>
+</body></html>
