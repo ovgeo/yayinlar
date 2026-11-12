@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ders Programı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap">
+<style>
+/* Class timetable: pick the programme and class, see the week. Same palette as the other faculty pages. */
+:root {
+  --bg: #FFFFFF; --ink: #363636; --muted: #6A6469; --line: #E6E0E2; --line-strong: #C9B6BC;
+  --brand: #9B2441; --brand-ink: #640013; --brand-soft: #FFF5F6; --bar: #F3EFF0; --uni: #3B5A7A; --uni-soft: #EEF3F8;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px)); }
+button, input { font: inherit; color: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.wrap { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 1.375rem; line-height: 1.25; font-weight: 700; color: var(--brand-ink); }
+.back { font-size: 0.8125rem; color: var(--muted); text-underline-offset: 3px; }
+.back:hover { color: var(--brand); }
+.framed .back { display: none; }
+
+.ctl { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lab { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; min-width: 64px; }
+.chip { background: var(--bg); border: 1px solid var(--brand); border-radius: 6px; padding: 6px 12px; min-height: 40px; font-size: 0.875rem; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand-ink); border-color: var(--brand-ink); font-weight: 600; box-shadow: 0 1px 4px rgba(100, 0, 19, 0.18); }
+.search { position: relative; }
+.search input { width: 100%; min-height: 44px; padding: 8px 40px 8px 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--bg); font-size: 0.9375rem; }
+.search input::placeholder { color: var(--muted); }
+.search button { position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; border: 0; background: none; border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 1.125rem; line-height: 1; }
+.search button[hidden] { display: none; }
+
+.hint { padding: 28px 16px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 8px; color: var(--muted); }
+.hint strong { display: block; font-size: 1.0625rem; color: var(--brand-ink); margin-bottom: 4px; }
+
+/* day tabs + agenda (narrow screens) */
+.days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.dt { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 2px; min-height: 52px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.dt .a { font-size: 0.8125rem; font-weight: 700; }
+.dt .b { font-size: 0.6875rem; color: var(--muted); }
+.dt.today { border-color: var(--brand); box-shadow: inset 0 -3px 0 var(--brand); }
+.dt[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand-ink); color: var(--brand-ink); box-shadow: 0 1px 4px rgba(100, 0, 19, 0.18); }
+.dt[aria-pressed="true"].today { box-shadow: inset 0 -3px 0 var(--brand), 0 1px 4px rgba(100, 0, 19, 0.18); }
+.agenda { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.card { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 12px; padding: 12px; border: 1px solid var(--line-strong); border-left: 4px solid var(--brand); border-radius: 8px; background: var(--bg); }
+.card.elec { border-left-color: var(--uni); background: var(--uni-soft); }
+.card.now { box-shadow: 0 0 0 2px var(--brand); }
+.tm { font-weight: 700; color: var(--brand-ink); font-variant-numeric: tabular-nums; font-size: 0.9375rem; line-height: 1.35; }
+.tm span { display: block; font-weight: 600; color: var(--muted); font-size: 0.8125rem; }
+.nm { margin: 0; font-size: 1rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.mt { margin: 2px 0 0; font-size: 0.875rem; color: var(--muted); }
+.mt b { color: var(--ink); font-weight: 600; }
+.rm { white-space: nowrap; }
+.badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; background: var(--brand); color: #fff; }
+.badge.next { background: var(--bg); color: var(--brand-ink); border: 1px solid var(--brand); }
+.tag { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--uni); color: var(--uni); }
+.sub { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.sub .it { padding-top: 8px; border-top: 1px solid var(--line-strong); }
+.sub .it:first-child { padding-top: 0; border-top: 0; }
+.free { padding: 24px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 8px; }
+
+/* week grid (wide screens) */
+.wkhead { display: grid; grid-template-columns: 46px repeat(5, minmax(0, 1fr)); gap: 6px; }
+.wkhead div { text-align: center; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding: 6px 0; border-bottom: 3px solid transparent; }
+.wkhead div.today { color: var(--brand-ink); border-bottom-color: var(--brand); }
+.wkbody { position: relative; display: grid; grid-template-columns: 46px repeat(5, minmax(0, 1fr)); gap: 6px; }
+.axis { position: relative; }
+.axis span { position: absolute; right: 4px; transform: translateY(-50%); font-size: 0.6875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.col { position: relative; border-left: 1px solid var(--line); background-image: linear-gradient(to bottom, var(--line) 1px, transparent 1px); }
+.col.today { background-color: #FFFBFB; }
+.blk { position: absolute; left: 2px; right: 2px; overflow: hidden; text-align: left; padding: 5px 7px; border: 1px solid var(--line-strong); border-left: 4px solid var(--brand); border-radius: 6px; background: var(--bg); cursor: pointer; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+.blk:hover { border-color: var(--brand); box-shadow: 0 2px 8px rgba(100, 0, 19, 0.2); z-index: 2; }
+.blk.elec { border-left-color: var(--uni); background: var(--uni-soft); }
+.blk .bt { display: block; font-size: 0.6875rem; font-weight: 700; color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+.blk .bn { display: block; font-weight: 700; font-size: 0.78rem; overflow-wrap: anywhere; }
+.blk .bm { display: block; color: var(--muted); }
+.blk .bm.one { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blk.elec .bt { color: var(--uni); }
+
+/* search results */
+.res { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rs { padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 8px; }
+.rs .nm { font-size: 0.9375rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.pill { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bar); }
+
+/* details pop-up (week grid) */
+.shade { position: fixed; inset: 0; background: rgba(40, 20, 28, 0.45); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.shade[hidden] { display: none; }
+.sheet { width: min(480px, 100%); max-height: 88vh; overflow: auto; background: var(--bg); border-radius: 12px; padding: 18px 18px 16px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3); }
+.sheet h2 { margin: 0 0 2px; font-size: 1.0625rem; color: var(--brand-ink); }
+.sheet .when { margin: 0 0 10px; color: var(--muted); font-size: 0.875rem; }
+.sheet .close { margin-top: 14px; background: var(--bg); border: 1px solid var(--brand); color: var(--brand-ink); border-radius: 6px; padding: 8px 16px; min-height: 40px; font-weight: 600; cursor: pointer; }
+
+.foot { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 0.8125rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.foot a { color: var(--brand-ink); text-underline-offset: 3px; }
+.note { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 480px) { .lab { min-width: 100%; } .card { grid-template-columns: 70px minmax(0, 1fr); gap: 10px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Ders Programı</h1>
+    <a class="back" href="https://bozok.edu.tr/okul/ilahiyat-fakultesi">← İlahiyat Fakültesi ana sayfası</a>
+  </div>
+
+  <div class="ctl">
+    <div class="row" id="progs" role="group" aria-label="Öğretim türü"></div>
+    <div class="row" id="clss" role="group" aria-label="Sınıf"></div>
+    <div class="search">
+      <label class="sr" for="q">Ders, hoca veya derslik ara</label>
+      <input id="q" type="search" autocomplete="off" placeholder="Ders, hoca veya derslik ara… (örn. Kelam, Dündar, Z-27)">
+      <button id="qx" type="button" aria-label="Aramayı temizle" hidden>✕</button>
+    </div>
+  </div>
+
+  <main id="view" aria-live="polite"></main>
+
+  <p class="note" id="nt"></p>
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="shade" id="shade" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"></div>
+</div>
+
+<script>
+/*DATA*/
+const DATA = {"programs":[{"id":"1","name":"1. Öğretim","pdf":"https://bozok.edu.tr/Dosya/667b265d-1.pdf","classes":["1-A","1-B","2","3","4-A","4-B"]},{"id":"2","name":"2. Öğretim","pdf":"https://bozok.edu.tr/Dosya/f6d1ef9c-1.pdf","classes":["2","3","4-A","4-B"]}],"labels":{"1-A":"1. Sınıf A","1-B":"1. Sınıf B","2":"2. Sınıf","3":"3. Sınıf","4-A":"4. Sınıf A","4-B":"4. Sınıf B"},"lect":{"1":"Prof. Dr. İsmail PIRLANTA","2":"Prof. Dr. Mehmet TÖZLÜYURT","3":"Dr. Öğr. Üyesi Yasin GÖKHAN","4":"Prof. Dr. Hakkı AYDIN","5":"Prof. Dr. A.Kadir DÜNDAR","6":"Prof. Dr. Ömer DEMİR","7":"Prof. Dr. Talip ÖZDEŞ","8":"Prof. Dr. Gülhan TÜRK","9":"Doç. Dr. Yusuf AKGÜL","10":"Doç. Dr. Ali BİNOL","11":"Doç. Dr. Halil ÖZTÜRK","12":"Doç. Dr. Selahattin YAKUT","13":"Doç. Dr. Sezai BEKDEMİR","14":"Doç. Dr. Nilüfer ATEŞ","15":"Dr. Öğr. Üyesi Hüseyin YÜNER","17":"Dr. Öğr. Üyesi Dadaş MUTALLİM","18":"Dr. Öğr. Üyesi Edibe BOYRAZ","19":"Dr. Öğr. Üyesi Fatma GÖÇMEN","20":"Dr. Öğr. Üyesi Münteha BEKİ","21":"Dr. Öğr. Üyesi Talha ERDEM","22":"Dr. Öğr. Üyesi Abdulali ALİYEV","23":"Dr. Öğr. Üyesi İhsan Övge ÖZTÜRK","24":"Dr. Öğr. Üyesi Yunus ÇAKIR","25":"Dr. Öğr. Üyesi N. Sümeyra ÇALIK","26":"Dr. Öğr. Üyesi Hatice GÖKTAŞ","27":"Öğr. Gör. Dr. Yasin CENAN","28":"Öğr. Gör. Yasin BEDİR","29":"Öğr. Gör. Mehmet ÖZÜDOĞRU","30":"Arş. Gör. Dr. Murat ÖKTEM","31":"Dr. Öğr. Üyesi Melek COŞGUN SOLAK","32":"Okutman Akif GÖÇMEN"},"entries":[{"p":"1","d":0,"s":"08:30","e":"10:15","c":["3"],"k":[{"n":"DİN SOSYOLOJİSİ","l":31,"r":"Ek Bina Z-01"}]},{"p":"1","d":0,"s":"08:30","e":"10:15","c":["4-B"],"k":[{"n":"İSLAM FELSEFESİ TARİHİ","l":26,"r":"Ek Bina Z-27"}]},{"p":"1","d":0,"s":"09:30","e":"12:15","c":["4-A"],"k":[{"n":"ÖZEL ÖĞRETİM YÖNTEMLERİ","l":19,"r":"Ek Bina 104"}]},{"p":"1","d":0,"s":"10:30","e":"12:15","c":["1-A","1-B"],"k":[{"n":"İSLAM İBADET ESASLARI","l":13,"r":"Ek Bina Z-27"}]},{"p":"1","d":0,"s":"10:30","e":"12:15","c":["2"],"k":[{"n":"ARAP DİLİ VE BELAGATI III","l":8,"r":"Ana Bina Amfi I"}]},{"p":"1","d":0,"s":"10:30","e":"12:15","c":["3"],"k":[{"n":"KELAM","l":2,"r":"Ek Bina Z-01"}]},{"p":"1","d":0,"s":"10:30","e":"12:15","c":["4-B"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina Z-02"}]},{"p":"1","d":0,"s":"13:30","e":"15:15","c":["1-A"],"k":[{"n":"İSLAM İNANÇ ESASLARI","l":11,"r":"Ek Bina Z-02"}]},{"p":"1","d":0,"s":"13:30","e":"15:15","c":["1-B"],"k":[{"n":"ARAP DİLİ VE BELAGATI I","l":8,"r":"Ek Bina Z-03"}]},{"p":"1","d":0,"s":"13:30","e":"15:15","c":["2"],"k":[{"n":"OSMANLI TÜRKÇESİ","l":14,"r":"Ek Bina 104"}]},{"p":"1","d":0,"s":"13:30","e":"15:15","c":["3"],"k":[{"n":"KURAN OKUMA VE TECVİT V A ŞUBESİ","l":27,"r":"Ek Bina 102"}]},{"p":"1","d":0,"s":"13:30","e":"15:15","c":["4-A","4-B"],"k":[{"n":"FIKIH I","l":13,"r":"Ek Bina Z-27"}]},{"p":"1","d":1,"s":"08:30","e":"10:15","c":["1-A","1-B"],"k":[{"n":"İSLAM İBADET ESASLARI","l":13,"r":"Ek Bina Z-27"}]},{"p":"1","d":1,"s":"08:30","e":"10:15","c":["3"],"k":[{"n":"TEFSİR II","l":10,"r":"Ek Bina Z-01"}]},{"p":"1","d":1,"s":"08:30","e":"10:15","c":["4-A"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina 104"}]},{"p":"1","d":1,"s":"09:30","e":"12:15","c":["2"],"k":[{"n":"EĞİTİME GİRİŞ","l":23,"r":"Ana Bina Amfi I"}]},{"p":"1","d":1,"s":"09:30","e":"12:15","c":["4-B"],"k":[{"n":"ÖZEL ÖĞRETİM YÖNTEMLERİ","l":19,"r":"Ek Bina Z-02"}]},{"p":"1","d":1,"s":"10:30","e":"12:15","c":["1-A"],"k":[{"n":"KUR'AN İLİMLERİ VE TEFSİR USULÜ (ARAPÇA)","l":21,"r":"Ek Bina Z-02"}]},{"p":"1","d":1,"s":"10:30","e":"12:15","c":["1-B"],"k":[{"n":"KUR'AN İLİMLERİ VE TEFSİR USULÜ (ARAPÇA)","l":25,"r":"Ek Bina Z-03"}]},{"p":"1","d":1,"s":"10:30","e":"12:15","c":["3"],"k":[{"n":"KELAM","l":2,"r":"Ek Bina Z-01"}]},{"p":"1","d":1,"s":"10:30","e":"12:15","c":["4-A"],"k":[{"n":"İSLAM FELSEFESİ TARİHİ","l":26,"r":"Ek Bina 104"}]},{"p":"1","d":1,"s":"13:30","e":"15:15","c":["1-A"],"k":[{"n":"ARAP DİLİ VE EDEBİYATI I","l":8,"r":"Ek Bina Z-02"}]},{"p":"1","d":1,"s":"13:30","e":"15:15","c":["1-B"],"k":[{"n":"İSLAM İNANÇ ESASLARI","l":11,"r":"Ek Bina Z-03"}]},{"p":"1","d":1,"s":"13:30","e":"15:15","c":["2"],"k":[{"n":"HADİS I","l":9,"r":"Ana Bina Amfi I"}]},{"p":"1","d":1,"s":"13:30","e":"15:15","c":["3"],"k":[{"n":"ÖĞRETİM TEKNOLOJİLERİ","l":6,"r":"Ek Bina Z-01"}]},{"p":"1","d":1,"s":"13:30","e":"15:15","c":["4-A"],"k":[{"n":"DİN FELSEFESİ","l":3,"r":"Ek Bina 104"}]},{"p":"1","d":1,"s":"13:30","e":"15:15","c":["4-B"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina Z-27"}]},{"p":"1","d":2,"s":"08:30","e":"10:15","c":["2"],"k":[{"n":"HADİS I","l":9,"r":"Ana Bina Amfi I"}]},{"p":"1","d":2,"s":"08:30","e":"10:15","c":["3"],"k":[{"n":"KURAN OKUMA VE TECVİT V B ŞUBESİ","l":27,"r":"Ek Bina 102"}]},{"p":"1","d":2,"s":"08:30","e":"10:15","c":["4-A"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina 104"}]},{"p":"1","d":2,"s":"08:30","e":"10:15","c":["4-B"],"k":[{"n":"DİN FELSEFESİ","l":3,"r":"Ek Bina Z-27"}]},{"p":"1","d":2,"s":"10:30","e":"12:15","c":["1-A"],"k":[{"n":"KUR'AN İLİMLERİ VE TEFSİR USULÜ (ARAPÇA)","l":21,"r":"Ek Bina Z-02"}]},{"p":"1","d":2,"s":"10:30","e":"12:15","c":["1-B"],"k":[{"n":"KURAN OKUMA VE TECVİT I","l":29,"r":"Ek Bina Z-03"}]},{"p":"1","d":2,"s":"10:30","e":"12:15","c":["2"],"k":[{"n":"DİN EĞİTİMİ","l":19,"r":"Ek Bina 104"}]},{"p":"1","d":2,"s":"10:30","e":"12:15","c":["3"],"k":[{"n":"Temel Müzik Bilgisi","l":15,"r":"Müzik Sınıfı"},{"n":"Kişilik ve Din","l":12,"r":"Ek Bina 102"},{"n":"Tasavvufta Karakter Eğitimi","l":18,"r":"Ek Bina 103"},{"n":"Genel Türk Din Tarihi","l":22,"r":"Ek Bina 105"}]},{"p":"1","d":2,"s":"10:30","e":"12:15","c":["4-A","4-B"],"k":[{"n":"FIKIH I","l":13,"r":"Ek Bina Z-27"}]},{"p":"1","d":2,"s":"13:30","e":"15:15","c":["1-A"],"k":[{"n":"KURAN OKUMA VE TECVİT I","l":29,"r":"Ek Bina Z-02"}]},{"p":"1","d":2,"s":"13:30","e":"15:15","c":["1-B"],"k":[{"n":"KUR'AN İLİMLERİ VE TEFSİR USULÜ (ARAPÇA)","l":25,"r":"Ek Bina Z-03"}]},{"p":"1","d":2,"s":"13:30","e":"15:15","c":["2"],"k":[{"n":"KURAN OKUMA VE TECVİT III A ŞUBESİ","l":28,"r":"Ana Bina Amfi I"}]},{"p":"1","d":2,"s":"13:30","e":"15:15","c":["3"],"k":[{"n":"TEFSİR II","l":10,"r":"Ek Bina Z-01"}]},{"p":"1","d":2,"s":"13:30","e":"15:15","c":["4-A","4-B"],"k":[{"n":"Cami Musikisi Uygulamaları","l":15,"r":"Müzik Sınıfı"},{"n":"Dini Ahlaki Gelişim Psikolojisi","l":12,"r":"Ek Bina 102"},{"n":"Tasavvuf Psikolojisi","l":18,"r":"Ek Bina 103"},{"n":"Kur'an'ın Ana Konuları","l":7,"r":"Ek Bina 104"},{"n":"Din ve Mitoloji","l":22,"r":"Ek Bina 105"},{"n":"Translation and İnterpretations of Quran","l":3,"r":"Ek Bina 130"}]},{"p":"1","d":3,"s":"08:30","e":"10:15","c":["2"],"k":[{"n":"İSLAM TARİHİ","l":17,"r":"Ek Bina Z-27"}]},{"p":"1","d":3,"s":"09:30","e":"12:15","c":["3"],"k":[{"n":"EĞİTİMDE ÖLÇME VE DEĞERLENDİRME","l":23,"r":"Ek Bina Z-01"}]},{"p":"1","d":3,"s":"10:30","e":"12:15","c":["2"],"k":[{"n":"İslam Ülkeleri ve Coğrafyası Tarihi","l":14,"r":"Ek Bina 101"},{"n":"Psikolojiye Giriş","l":12,"r":"Ek Bina 102"},{"n":"Tefsir Çeşitleri","l":21,"r":"Ek Bina 103"},{"n":"Din Fenomenolojisi","l":22,"r":"Ek Bina 105"}]},{"p":"1","d":3,"s":"10:30","e":"12:15","c":["4-A"],"k":[{"n":"DİN FELSEFESİ","l":3,"r":"Ek Bina 104"}]},{"p":"1","d":3,"s":"10:30","e":"12:15","c":["4-B"],"k":[{"n":"İSLAM MEZHEPLERİ TARİHİ","l":11,"r":"Ek Bina Z-27"}]},{"p":"1","d":3,"s":"13:30","e":"15:15","c":["2"],"k":[{"n":"DİNİ MUSİKİ","l":15,"r":"Müzik Sınıfı"}]},{"p":"1","d":3,"s":"13:30","e":"15:15","c":["3"],"k":[{"n":"İSLAM SANATLARI TARİHİ","l":5,"r":"Ek Bina Z-01"}]},{"p":"1","d":3,"s":"13:30","e":"15:15","c":["4-A"],"k":[{"n":"İSLAM MEZHEPLERİ TARİHİ","l":11,"r":"Ek Bina 104"}]},{"p":"1","d":3,"s":"13:30","e":"15:15","c":["4-B"],"k":[{"n":"DİN FELSEFESİ","l":3,"r":"Ek Bina Z-27"}]},{"p":"1","d":3,"s":"15:30","e":"17:15","c":["1-A","1-B"],"k":[{"n":"Dijital Dönüşüm ve Sürdürülebilir Gelecek","l":null,"r":"Ek Bina Z-02 / Ek Bina Z-03"}]},{"p":"1","d":3,"s":"15:30","e":"17:15","c":["2"],"k":[{"n":"ALAN DIŞI","l":null,"r":"Ana Bina Amfi I"}]},{"p":"1","d":4,"s":"08:30","e":"10:30","c":["1-A","1-B"],"k":[{"n":"TÜRK DİLİ VE EDEBİYATI I","l":null,"r":"Ek Bina Z-02 / Ek Bina Z-03"}]},{"p":"1","d":4,"s":"08:30","e":"10:15","c":["2"],"k":[{"n":"KURAN OKUMA VE TECVİT III B ŞUBESİ","l":28,"r":"Ana Bina Amfi I"}]},{"p":"1","d":4,"s":"10:30","e":"12:15","c":["1-A","1-B"],"k":[{"n":"YABANCI DİL I","l":null,"r":"Ek Bina Z-02 / Ek Bina Z-03"}]},{"p":"1","d":4,"s":"10:30","e":"12:15","c":["2"],"k":[{"n":"İSLAM TARİHİ","l":17,"r":"Ek Bina Z-27"}]},{"p":"1","d":4,"s":"15:30","e":"17:15","c":["1-A","1-B"],"k":[{"n":"ATATÜRK İLKELERİ VE İNKILAPLARI TARİHİ","l":null,"r":"Ek Bina Z-02 / Ek Bina Z-03"}]},{"p":"2","d":0,"s":"15:30","e":"18:15","c":["2"],"k":[{"n":"EĞİTİME GİRİŞ","l":23,"r":"Ana Bina Amfi I"}]},{"p":"2","d":0,"s":"15:30","e":"17:15","c":["3"],"k":[{"n":"KELAM","l":2,"r":"Ek Bina Z-01"}]},{"p":"2","d":0,"s":"15:30","e":"17:15","c":["4-A","4-B"],"k":[{"n":"FIKIH I","l":13,"r":"Ek Bina 104 / Ek Bina Z-27"}]},{"p":"2","d":0,"s":"17:30","e":"20:15","c":["4-A"],"k":[{"n":"ÖZEL ÖĞRETİM YÖNTEMLERİ","l":19,"r":"Ek Bina 104"}]},{"p":"2","d":0,"s":"17:30","e":"19:15","c":["4-B"],"k":[{"n":"İSLAM MEZHEPLERİ TARİHİ","l":11,"r":"Ek Bina Z-27"}]},{"p":"2","d":0,"s":"18:30","e":"20:15","c":["2"],"k":[{"n":"HADİS I","l":30,"r":"Ek Bina Z-02"}]},{"p":"2","d":0,"s":"18:30","e":"21:15","c":["3"],"k":[{"n":"EĞİTİMDE ÖLÇME VE DEĞERLENDİRME","l":23,"r":"Ek Bina Z-01"}]},{"p":"2","d":0,"s":"19:30","e":"21:15","c":["4-B"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina Z-27"}]},{"p":"2","d":1,"s":"15:30","e":"17:15","c":["2"],"k":[{"n":"OSMANLI TÜRKÇESİ","l":14,"r":"Ana Bina Amfi I"}]},{"p":"2","d":1,"s":"15:30","e":"17:15","c":["3"],"k":[{"n":"KELAM","l":2,"r":"Ek Bina Z-01"}]},{"p":"2","d":1,"s":"15:30","e":"17:15","c":["4-A"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina 104"}]},{"p":"2","d":1,"s":"15:30","e":"17:15","c":["4-B"],"k":[{"n":"DİN FELSEFESİ","l":20,"r":"Ek Bina Z-27"}]},{"p":"2","d":1,"s":"17:30","e":"19:15","c":["2"],"k":[{"n":"DİN EĞİTİMİ","l":19,"r":"Ek Bina Z-02"}]},{"p":"2","d":1,"s":"17:30","e":"19:15","c":["3"],"k":[{"n":"TEFSİR II","l":7,"r":"Ek Bina Z-01"}]},{"p":"2","d":1,"s":"17:30","e":"19:15","c":["4-A"],"k":[{"n":"DİN FELSEFESİ","l":20,"r":"Ek Bina 104"}]},{"p":"2","d":1,"s":"17:30","e":"19:15","c":["4-B"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina Z-27"}]},{"p":"2","d":1,"s":"19:30","e":"21:15","c":["2"],"k":[{"n":"İSLAM TARİHİ","l":17,"r":"Ek Bina Z-27"}]},{"p":"2","d":1,"s":"19:30","e":"21:15","c":["3"],"k":[{"n":"DİN SOSYOLOJİSİ","l":31,"r":"Ek Bina Z-01"}]},{"p":"2","d":1,"s":"19:30","e":"21:15","c":["4-A","4-B"],"k":[{"n":"Dini Ahlaki Gelişim Psikolojisi","l":12,"r":"Ek Bina 102"},{"n":"Tasavvuf Psikolojisi","l":18,"r":"Ek Bina 103"},{"n":"Kur'an'ın Ana Konuları","l":7,"r":"Ek Bina 104"},{"n":"Translation and İnterpretations of Quran","l":3,"r":"Ek Bina 130"}]},{"p":"2","d":2,"s":"15:30","e":"17:15","c":["2"],"k":[{"n":"DİNİ MUSİKİ","l":15,"r":"Müzik Sınıfı"}]},{"p":"2","d":2,"s":"15:30","e":"17:15","c":["3"],"k":[{"n":"ÖĞRETİM TEKNOLOJİLERİ","l":6,"r":"Ek Bina Z-01"}]},{"p":"2","d":2,"s":"15:30","e":"17:15","c":["4-A","4-B"],"k":[{"n":"FIKIH I","l":13,"r":"Ek Bina Z-27"}]},{"p":"2","d":2,"s":"17:30","e":"19:15","c":["2"],"k":[{"n":"ARAP DİLİ VE BELAGATI III","l":8,"r":"Ana Bina Amfi I"}]},{"p":"2","d":2,"s":"17:30","e":"19:15","c":["3"],"k":[{"n":"İSLAM SANATLARI TARİHİ","l":5,"r":"Ek Bina Z-01"}]},{"p":"2","d":2,"s":"17:30","e":"19:15","c":["4-A"],"k":[{"n":"DİNLER TARİHİ","l":22,"r":"Ek Bina 104"}]},{"p":"2","d":2,"s":"17:30","e":"20:15","c":["4-B"],"k":[{"n":"ÖZEL ÖĞRETİM YÖNTEMLERİ","l":19,"r":"Ek Bina Z-27"}]},{"p":"2","d":2,"s":"19:30","e":"21:15","c":["2"],"k":[{"n":"HADİS I","l":30,"r":"Ek Bina Z-02"}]},{"p":"2","d":2,"s":"19:30","e":"21:15","c":["3"],"k":[{"n":"Kişilik ve Din","l":12,"r":"Ek Bina 103"},{"n":"Tasavvufta Karakter Eğitimi","l":18,"r":"Ek Bina 105"},{"n":"Genel Türk Din Tarihi","l":22,"r":"Ek Bina 130"},{"n":"İslam Öncesi Arap Tarihi ve Kültürü","l":17,"r":"Ek Bina 101"}]},{"p":"2","d":2,"s":"19:30","e":"21:15","c":["4-A"],"k":[{"n":"İSLAM FELSEFESİ TARİHİ","l":26,"r":"Ek Bina 104"}]},{"p":"2","d":3,"s":"15:30","e":"17:15","c":["2"],"k":[{"n":"ALAN DIŞI","l":null,"r":"Ana Bina Amfi I"}]},{"p":"2","d":3,"s":"15:30","e":"17:15","c":["3"],"k":[{"n":"TEFSİR II","l":7,"r":"Ek Bina Z-01"}]},{"p":"2","d":3,"s":"15:30","e":"17:15","c":["4-A"],"k":[{"n":"DİN FELSEFESİ","l":20,"r":"Ek Bina 104"}]},{"p":"2","d":3,"s":"15:30","e":"17:15","c":["4-B"],"k":[{"n":"İSLAM FELSEFESİ TARİHİ","l":26,"r":"Ek Bina Z-27"}]},{"p":"2","d":3,"s":"17:30","e":"19:15","c":["2"],"k":[{"n":"Psikolojiye Giriş","l":12,"r":"Ek Bina 103"},{"n":"Tefsir Çeşitleri","l":21,"r":"Ek Bina 105"},{"n":"Din Fenomenolojisi","l":22,"r":"Ek Bina 106"}]},{"p":"2","d":3,"s":"17:30","e":"19:15","c":["3"],"k":[{"n":"KURAN OKUMA VE TECVİT V A ŞUBESİ","l":27,"r":"Ek Bina Z-01"}]},{"p":"2","d":3,"s":"17:30","e":"19:15","c":["4-A"],"k":[{"n":"İSLAM MEZHEPLERİ TARİHİ","l":11,"r":"Ek Bina 104"}]},{"p":"2","d":3,"s":"17:30","e":"19:15","c":["4-B"],"k":[{"n":"DİN FELSEFESİ","l":20,"r":"Ek Bina Z-27"}]},{"p":"2","d":3,"s":"19:30","e":"21:15","c":["2"],"k":[{"n":"KURAN OKUMA VE TECVİT III","l":28,"r":"Ana Bina Amfi I"}]},{"p":"2","d":3,"s":"19:30","e":"21:15","c":["4-A","4-B"],"k":[{"n":"Din ve Mitoloji","l":32,"r":"Ek Bina 104 / Ek Bina Z-27"}]},{"p":"2","d":4,"s":"15:30","e":"17:15","c":["2"],"k":[{"n":"İSLAM TARİHİ","l":17,"r":"Ek Bina Z-27"}]}]};
+/*END DATA*/
+
+const TZ = 'Europe/Istanbul';
+const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+const DAY_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum'];
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+const fold = s => String(s || '').replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i');
+const toMin = t => { const [h, m] = t.split(':'); return +h * 60 + +m; };
+const fmtMin = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const lecName = n => (n != null && DATA.lect[n]) || '';
+function metaLine(k) {
+  const l = lecName(k.l); if (!l && !k.r) return null;
+  const m = el('p', 'mt');
+  if (l) m.appendChild(el('b', null, l));
+  if (k.r) { if (l) m.appendChild(document.createTextNode(' · ')); m.appendChild(el('span', 'rm', k.r.replace(/-/g, '\u2011'))); }
+  return m;
+}
+const progOf = id => DATA.programs.find(p => p.id === id);
+const clsLabel = id => DATA.labels[id] || id;
+if (window.self !== window.top) document.documentElement.classList.add('framed');
+
+/* ---- state (the choice is remembered on this device only) ---- */
+const KEY = 'ders-programi-secim';
+const S = { prog: '1', cls: '', day: 0, q: '' };
+function nowInfo() {
+  const p = {}; new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(p.weekday);
+  return { day: wd, min: +p.hour * 60 + +p.minute };
+}
+try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && progOf(v.prog)) { S.prog = v.prog; if (progOf(v.prog).classes.includes(v.cls)) S.cls = v.cls; } } catch (e) {}
+S.day = Math.min(Math.max(nowInfo().day, 0), 4); if (nowInfo().day > 4) S.day = 0;
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ prog: S.prog, cls: S.cls })); } catch (e) {} };
+
+const wide = window.matchMedia('(min-width: 720px)');
+wide.addEventListener ? wide.addEventListener('change', render) : wide.addListener(render);
+
+/* ---- controls ---- */
+function renderControls() {
+  const pr = $('progs'); pr.textContent = ''; pr.appendChild(el('span', 'lab', 'Öğretim'));
+  DATA.programs.forEach(p => {
+    const b = el('button', 'chip', p.name); b.type = 'button'; b.setAttribute('aria-pressed', String(S.prog === p.id));
+    b.addEventListener('click', () => { S.prog = p.id; if (!progOf(p.id).classes.includes(S.cls)) S.cls = ''; save(); render(); });
+    pr.appendChild(b);
+  });
+  const cl = $('clss'); cl.textContent = ''; cl.appendChild(el('span', 'lab', 'Sınıf'));
+  progOf(S.prog).classes.forEach(c => {
+    const b = el('button', 'chip', clsLabel(c)); b.type = 'button'; b.setAttribute('aria-pressed', String(S.cls === c));
+    b.addEventListener('click', () => { S.cls = c; save(); render(); });
+    cl.appendChild(b);
+  });
+}
+
+/* ---- data helpers ---- */
+const forClass = () => DATA.entries.filter(e => e.p === S.prog && e.c.includes(S.cls)).sort((a, b) => a.d - b.d || a.s.localeCompare(b.s));
+const isElec = e => e.k.length > 1;
+function courseLines(k, parent) {   // name + lecturer + room as a small block
+  const w = el('div', 'it');
+  w.appendChild(el('p', 'nm', k.n));
+  const m = metaLine(k); if (m) w.appendChild(m);
+  return w;
+}
+
+/* ---- narrow: day tabs + cards ---- */
+function renderDay(view) {
+  const list = forClass();
+  const today = nowInfo();
+  const tabs = el('div', 'days'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Gün');
+  DAYS.forEach((d, i) => {
+    const n = list.filter(e => e.d === i).length;
+    const b = el('button', 'dt' + (today.day === i ? ' today' : '')); b.type = 'button'; b.setAttribute('aria-pressed', String(S.day === i));
+    b.setAttribute('aria-label', d + ', ' + n + ' ders');
+    b.append(el('span', 'a', DAY_SHORT[i]), el('span', 'b', n ? n + ' ders' : '—'));
+    b.addEventListener('click', () => { S.day = i; render(); });
+    tabs.appendChild(b);
+  });
+  view.appendChild(tabs);
+  view.appendChild(el('h2', 'sr', DAYS[S.day]));
+  const day = list.filter(e => e.d === S.day);
+  if (!day.length) { view.appendChild(el('div', 'free', DAYS[S.day] + ' günü bu sınıf için ders yok.')); return; }
+  const ul = el('ul', 'agenda');
+  const isToday = today.day === S.day;
+  const nextIdx = isToday ? day.findIndex(e => toMin(e.s) > today.min) : -1;
+  day.forEach((e, i) => {
+    const nowOn = isToday && toMin(e.s) <= today.min && today.min < toMin(e.e);
+    const li = el('li', 'card' + (isElec(e) ? ' elec' : '') + (nowOn ? ' now' : ''));
+    const t = el('div', 'tm', e.s); t.appendChild(el('span', null, e.e)); li.appendChild(t);
+    const body = el('div');
+    if (isElec(e)) {
+      const h = el('p', 'nm'); h.appendChild(el('span', 'tag', 'Seçmeli')); h.appendChild(document.createTextNode(' dersler'));
+      if (nowOn) h.appendChild(el('span', 'badge', 'Şimdi')); else if (i === nextIdx) h.appendChild(el('span', 'badge next', 'Sıradaki'));
+      body.appendChild(h);
+      const sub = el('div', 'sub'); e.k.forEach(k => sub.appendChild(courseLines(k))); body.appendChild(sub);
+    } else {
+      const k = e.k[0]; const h = el('p', 'nm', k.n);
+      if (nowOn) h.appendChild(el('span', 'badge', 'Şimdi')); else if (i === nextIdx) h.appendChild(el('span', 'badge next', 'Sıradaki'));
+      body.appendChild(h);
+      const m = metaLine(k); if (m) body.appendChild(m);
+    }
+    li.appendChild(body); ul.appendChild(li);
+  });
+  view.appendChild(ul);
+}
+
+/* ---- wide: week grid ---- */
+function renderWeek(view) {
+  const list = forClass();
+  if (!list.length) { view.appendChild(el('div', 'free', 'Bu sınıf için ders bulunamadı.')); return; }
+  const t0 = Math.floor(Math.min(...list.map(e => toMin(e.s))) / 60) * 60;
+  const t1 = Math.ceil(Math.max(...list.map(e => toMin(e.e))) / 60) * 60;
+  const scale = Math.max(0.8, Math.min(1.05, 540 / (t1 - t0)));
+  const H = Math.round((t1 - t0) * scale);
+  const today = nowInfo();
+  const head = el('div', 'wkhead'); head.appendChild(el('div'));
+  DAYS.forEach((d, i) => head.appendChild(el('div', today.day === i ? 'today' : '', d)));
+  view.appendChild(head);
+  const body = el('div', 'wkbody'); body.style.height = H + 'px';
+  const ax = el('div', 'axis');
+  for (let m = t0; m <= t1; m += 60) { const s = el('span', null, fmtMin(m)); s.style.top = Math.round((m - t0) * scale) + 'px'; ax.appendChild(s); }
+  body.appendChild(ax);
+  DAYS.forEach((d, i) => {
+    const col = el('div', 'col' + (today.day === i ? ' today' : '')); col.style.backgroundSize = '100% ' + Math.round(60 * scale) + 'px';
+    list.filter(e => e.d === i).forEach(e => {
+      const b = el('button', 'blk' + (isElec(e) ? ' elec' : '')); b.type = 'button';
+      b.style.top = Math.round((toMin(e.s) - t0) * scale) + 'px'; b.style.height = Math.round((toMin(e.e) - toMin(e.s)) * scale) - 2 + 'px';
+      b.appendChild(el('span', 'bt', e.s + '–' + e.e));
+      if (isElec(e)) {
+        b.appendChild(el('span', 'bn', 'Seçmeli dersler (' + e.k.length + ')'));
+        e.k.slice(0, 2).forEach(k => b.appendChild(el('span', 'bm one', k.n)));
+        if (e.k.length > 2) b.appendChild(el('span', 'bm one', '+' + (e.k.length - 2) + ' ders daha · ayrıntı için tıklayın'));
+      } else {
+        const k = e.k[0]; b.appendChild(el('span', 'bn', k.n));
+        const l = lecName(k.l); if (l) b.appendChild(el('span', 'bm', l)); if (k.r) b.appendChild(el('span', 'bm', k.r));
+      }
+      b.setAttribute('aria-label', DAYS[i] + ' ' + e.s + '–' + e.e + ', ' + (isElec(e) ? 'seçmeli dersler' : e.k[0].n) + '. Ayrıntılar için basın.');
+      b.addEventListener('click', () => openSheet(e));
+      col.appendChild(b);
+    });
+    body.appendChild(col);
+  });
+  view.appendChild(body);
+}
+
+/* ---- details pop-up ---- */
+let lastFocus = null;
+function openSheet(e) {
+  const sh = $('sheet'); sh.textContent = '';
+  const h = el('h2', null, isElec(e) ? 'Seçmeli dersler' : e.k[0].n); h.id = 'sh-t'; sh.appendChild(h);
+  sh.appendChild(el('p', 'when', DAYS[e.d] + ' · ' + e.s + '–' + e.e + ' · ' + e.c.map(clsLabel).join(', ')));
+  if (isElec(e)) { const sub = el('div', 'sub'); e.k.forEach(k => sub.appendChild(courseLines(k))); sh.appendChild(sub); }
+  else { const m = metaLine(e.k[0]); if (m) sh.appendChild(m); }
+  const c = el('button', 'close', 'Kapat'); c.type = 'button'; c.addEventListener('click', closeSheet); sh.appendChild(c);
+  lastFocus = document.activeElement; $('shade').hidden = false; c.focus();
+}
+function closeSheet() { $('shade').hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+$('shade').addEventListener('click', e => { if (e.target === $('shade')) closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shade').hidden) closeSheet(); });
+
+/* ---- search (across both programmes) ---- */
+function renderSearch(view) {
+  const q = fold(S.q).trim(); const words = q.split(/\s+/);
+  const hits = [];
+  DATA.entries.forEach(e => e.k.forEach(k => {
+    const hay = fold([k.n, lecName(k.l), k.r || '', e.c.map(clsLabel).join(' '), progOf(e.p).name, DAYS[e.d]].join(' '));
+    if (words.every(w => hay.includes(w))) hits.push({ e, k });
+  }));
+  hits.sort((a, b) => a.e.p.localeCompare(b.e.p) || a.e.d - b.e.d || a.e.s.localeCompare(b.e.s));
+  const h = el('p', 'note', hits.length ? hits.length + ' sonuç' : 'Sonuç bulunamadı.'); view.appendChild(h);
+  const ul = el('ul', 'res');
+  hits.slice(0, 60).forEach(({ e, k }) => {
+    const li = el('li', 'rs'); li.appendChild(el('p', 'nm', k.n));
+    const l = lecName(k.l); if (l) li.appendChild(el('p', 'mt', l));
+    const chips = el('div', 'chips');
+    [progOf(e.p).name, e.c.map(clsLabel).join(' + '), DAYS[e.d] + ' ' + e.s + '–' + e.e, k.r].filter(Boolean).forEach(t => chips.appendChild(el('span', 'pill', t)));
+    if (isElec(e)) chips.appendChild(el('span', 'tag', 'Seçmeli'));
+    li.appendChild(chips); ul.appendChild(li);
+  });
+  view.appendChild(ul);
+  if (hits.length > 60) view.appendChild(el('p', 'note', 'İlk 60 sonuç gösteriliyor; aramayı daraltın.'));
+}
+
+/* ---- main ---- */
+function render() {
+  renderControls();
+  const view = $('view'); view.textContent = '';
+  $('qx').hidden = !S.q;
+  if (S.q.trim().length >= 2) renderSearch(view);
+  else if (!S.cls) { const d = el('div', 'hint'); d.appendChild(el('strong', null, 'Sınıfınızı seçin')); d.appendChild(document.createTextNode('Yukarıdan öğretim türünü ve sınıfınızı seçin; haftalık programınız burada görünür. Seçiminiz bu cihazda hatırlanır.')); view.appendChild(d); }
+  else if (wide.matches) renderWeek(view);
+  else renderDay(view);
+  $('nt').textContent = 'Seçmeli derslerde ders seçimi ve kayıt işlemleri akademik danışman rehberliğinde yapılır. ' + progOf(S.prog).name + ' öğrencileri derslerini yalnızca kendi öğretim türünün programından alabilir.';
+  const f = $('foot'); f.textContent = ''; f.appendChild(el('span', null, 'Özgün program (PDF):'));
+  DATA.programs.forEach(p => { const a = el('a', null, p.name); a.href = p.pdf; a.target = '_blank'; a.rel = 'noopener'; f.appendChild(a); });
+}
+$('q').addEventListener('input', e => { S.q = e.target.value; render(); });
+$('qx').addEventListener('click', () => { S.q = ''; $('q').value = ''; render(); $('q').focus(); });
+render();
+setInterval(() => { if (!document.hidden && S.cls && !S.q && document.activeElement === document.body) render(); }, 60000);
+</script>
+</body>
+</html>
