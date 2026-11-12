@@ -233,7 +233,7 @@ function demo() {
 }
 
 /* ---- state ---- */
-const S = { today: todayStr(), sel: todayStr(), scope: 'all', events: [], ann: [], sample: false, err: '' };
+const S = { today: todayStr(), sel: todayStr(), scope: 'faculty', events: [], ann: [], sample: false, err: '' };
 const $ = id => document.getElementById(id);
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 const visible = () => S.events.filter(e => S.scope === 'all' || e.scope === S.scope);
@@ -244,7 +244,7 @@ const scopeLabel = s => (s === 'university' ? T.university : T.faculty);
 /* ---- render ---- */
 function renderScopes() {
   const box = $('scopes'); box.textContent = '';
-  [['all', T.all], ['faculty', T.faculty], ['university', T.university]].forEach(([k, label]) => {
+  [['faculty', T.faculty], ['university', T.university], ['all', T.all]].forEach(([k, label]) => {
     const b = el('button', 'sc', label); b.type = 'button'; b.setAttribute('aria-pressed', String(S.scope === k));
     b.addEventListener('click', () => { S.scope = k; render(); });
     box.appendChild(b);
@@ -312,7 +312,10 @@ function renderWeek() {
 
 function renderAnn() {
   const root = $('ann'); root.textContent = '';
-  const list = S.ann.filter(a => S.scope === 'all' || a.scope === S.scope).slice(0, MAX_ANN);
+  /* one scope shows its latest five; "all" shows the latest three of each, newest first, so neither crowds out the other */
+  const list = S.scope === 'all'
+    ? ['faculty', 'university'].flatMap(k => S.ann.filter(a => a.scope === k).slice(0, 3)).sort((a, b) => b.date.localeCompare(a.date))
+    : S.ann.filter(a => a.scope === S.scope).slice(0, MAX_ANN);
   $('annbox').hidden = !list.length;
   list.forEach(a => {
     const li = el('li');
