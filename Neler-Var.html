@@ -28,7 +28,7 @@ body {
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.wrap { position: relative; max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 h1 { margin: 0; font-size: 1.375rem; line-height: 1.25; font-weight: 700; color: var(--brand-ink); }
 .sample { margin: 0; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--brand-soft); color: var(--brand-ink); font-size: 0.8125rem; }
@@ -90,6 +90,21 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline
 .dot.uni { background: var(--bg); border: 1.5px solid var(--uni); }
 .more { font-size: 0.6875rem; font-weight: 700; color: var(--brand-ink); }
 
+/* month calendar: a pop-up laid over the day box and week strip, so the page never grows */
+.month { position: absolute; left: 0; right: 0; z-index: 5; background: var(--bg); border: 1px solid var(--brand); border-radius: 10px; padding: 12px; box-shadow: 0 12px 32px rgba(100, 0, 19, 0.24); }
+.month[hidden] { display: none; }
+.mh { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.mh strong { flex: 1; text-align: center; font-size: 1.0625rem; font-weight: 700; color: var(--brand-ink); }
+.mg { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mw { text-align: center; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 2px 0 4px; }
+.md { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; min-height: 54px; padding: 6px 2px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.9375rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.md:hover { border-color: var(--brand); }
+.md.out { background: #FBFAFA; color: var(--muted); font-weight: 400; }
+.md.today { border-color: var(--brand); box-shadow: inset 0 -3px 0 var(--brand); }
+.md[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand-ink); color: var(--brand-ink); box-shadow: 0 1px 4px rgba(100, 0, 19, 0.18); }
+.md[aria-pressed="true"].today { box-shadow: inset 0 -3px 0 var(--brand), 0 1px 4px rgba(100, 0, 19, 0.18); }
+@media (max-width: 640px) { .month { padding: 10px; } .md { min-height: 46px; font-size: 0.875rem; } }
+
 /* announcements */
 .ann h2 { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 4px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .ann .sb { font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 0 4px; cursor: pointer; }
@@ -134,6 +149,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline
       <button class="nb" id="prev" type="button"></button>
       <button class="nb" id="cur" type="button"></button>
       <button class="nb" id="next" type="button"></button>
+      <button class="nb" id="mon" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="month"></button>
     </div>
   </div>
   <div class="week" id="week"></div>
@@ -142,6 +158,17 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline
     <h2 id="annh"></h2>
     <ul id="ann"></ul>
   </section>
+
+  <div class="month" id="month" role="dialog" aria-modal="false" hidden>
+    <div class="mh">
+      <button class="nb" id="mprev" type="button"></button>
+      <strong id="mlabel" aria-live="polite"></strong>
+      <button class="nb" id="mnext" type="button"></button>
+      <button class="nb" id="mtoday" type="button"></button>
+      <button class="nb" id="mclose" type="button"></button>
+    </div>
+    <div class="mg" id="mgrid"></div>
+  </div>
 </div>
 
 <script>
@@ -156,7 +183,7 @@ const STR = {
   en: {
     title: "What's on", today: 'Today', allDay: 'All day', none: 'Nothing scheduled', nextUp: 'Next up',
     all: 'All', faculty: 'Faculty', university: 'University', ann: 'Latest announcements', dates: 'Key dates', noAnn: 'No announcements.', ongoing: 'Ongoing', tomorrow: 'Tomorrow', daysLeft: n => n + ' days left',
-    prev: '‹ Prev', next: 'Next ›', thisWeek: 'This week',
+    prev: '‹ Prev', next: 'Next ›', thisWeek: 'This week', month: 'Month', monthOpen: 'Open the monthly calendar', monthShut: 'Close', monthPrev: 'Previous month', monthNext: 'Next month', monthAria: 'Monthly calendar',
     sample: 'Demo entries, shown to preview the layout. Real entries replace them once the data source is connected.',
     loadErr: 'Could not load the latest data. Showing the last saved copy.', loadErrNone: 'Could not load the data right now.',
     loading: 'Loading the latest information… the first load can take a few seconds.', until: 'until', noneAhead: 'Nothing coming up.', more: 'more', locale: 'en-GB'
@@ -164,7 +191,7 @@ const STR = {
   tr: {
     title: 'Neler Var', today: 'Bugün', allDay: 'Tüm gün', none: 'Planlanmış bir etkinlik yok', nextUp: 'Sıradaki',
     all: 'Tümü', faculty: 'Fakülte', university: 'Üniversite', ann: 'Son duyurular', dates: 'Önemli tarihler', noAnn: 'Duyuru yok.', ongoing: 'Sürüyor', tomorrow: 'Yarın', daysLeft: n => n + ' gün kaldı',
-    prev: '‹ Önceki', next: 'Sonraki ›', thisWeek: 'Bu hafta',
+    prev: '‹ Önceki', next: 'Sonraki ›', thisWeek: 'Bu hafta', month: 'Aylık', monthOpen: 'Aylık takvimi aç', monthShut: 'Kapat', monthPrev: 'Önceki ay', monthNext: 'Sonraki ay', monthAria: 'Aylık takvim',
     sample: 'Örnek kayıtlar; yerleşimi göstermek için konuldu. Veri kaynağı bağlanınca gerçek kayıtlar bunların yerini alır.',
     loadErr: 'Güncel veri alınamadı. Son kaydedilen kopya gösteriliyor.', loadErrNone: 'Veri şu anda alınamadı.',
     loading: 'Güncel bilgiler yükleniyor… ilk açılışta birkaç saniye sürebilir.', until: 'şuna kadar', noneAhead: 'Yaklaşan bir etkinlik yok.', more: 'daha', locale: 'tr-TR'
@@ -242,7 +269,7 @@ function demo() {
 }
 
 /* ---- state ---- */
-const S = { today: todayStr(), sel: todayStr(), scope: 'faculty', lower: 'ann', events: [], ann: [], sample: false, err: '', loading: !!WIDGET_URL };
+const S = { today: todayStr(), sel: todayStr(), scope: 'faculty', lower: 'ann', mon: '', events: [], ann: [], sample: false, err: '', loading: !!WIDGET_URL };
 const $ = id => document.getElementById(id);
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 const visible = () => S.events.filter(e => S.scope === 'all' || e.scope === S.scope);
@@ -377,11 +404,54 @@ function renderAnn() {
   });
 }
 
+/* ---- month calendar ---- */
+const M = () => $('month');
+const monthOpen = () => !M().hidden;
+function renderMonth() {
+  const first = S.mon;
+  const firstDate = parse(first), dim = new Date(Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth() + 1, 0)).getUTCDate();
+  const start = mondayOf(first), rows = Math.ceil((((firstDate.getUTCDay() + 6) % 7) + dim) / 7);
+  $('mlabel').textContent = fmt(first, { month: 'long', year: 'numeric' });
+  const g = $('mgrid'); g.textContent = '';
+  for (let i = 0; i < 7; i++) g.appendChild(el('span', 'mw', fmt(addDays(start, i), { weekday: 'short' })));
+  for (let i = 0; i < rows * 7; i++) {
+    const d = addDays(start, i), list = forDay(d);
+    const b = el('button', 'md' + (d.slice(0, 7) !== first.slice(0, 7) ? ' out' : '') + (d === S.today ? ' today' : '')); b.type = 'button';
+    b.dataset.d = d; b.setAttribute('aria-pressed', String(d === S.sel));
+    b.setAttribute('aria-label', fmt(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + list.length);
+    const dots = el('div', 'dots');
+    list.slice(0, 3).forEach(e => dots.appendChild(el('span', 'dot' + (e.scope === 'university' ? ' uni' : ''))));
+    if (list.length > 3) dots.appendChild(el('span', 'more', '+'));
+    b.append(el('span', null, String(parse(d).getUTCDate())), dots);
+    b.addEventListener('click', () => { S.sel = d; closeMonth(true); render(); });
+    g.appendChild(b);
+  }
+}
+function openMonth() {
+  S.mon = S.sel.slice(0, 7) + '-01';
+  renderMonth();
+  M().style.top = $('big').offsetTop + 'px';
+  M().hidden = false; $('mon').setAttribute('aria-expanded', 'true');
+  const f = $('mgrid').querySelector('[aria-pressed="true"]') || $('mgrid').querySelector('.md'); if (f) f.focus();
+}
+function closeMonth(refocus) {
+  if (!monthOpen()) return;
+  M().hidden = true; $('mon').setAttribute('aria-expanded', 'false');
+  if (refocus) $('mon').focus();
+}
+function shiftMonth(n) { const d = parse(S.mon); S.mon = ymd(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1))); renderMonth(); }
+
 function render() {
   $('h1').textContent = T.title;
   $('sample').textContent = T.sample; $('sample').hidden = !S.sample;
   $('err').textContent = S.err; $('err').hidden = !S.err;
   $('prev').textContent = T.prev; $('next').textContent = T.next; $('cur').textContent = T.thisWeek;
+  $('mon').textContent = T.month; $('mon').setAttribute('aria-label', T.monthOpen);
+  M().setAttribute('aria-label', T.monthAria);
+  $('mprev').textContent = '‹'; $('mprev').setAttribute('aria-label', T.monthPrev);
+  $('mnext').textContent = '›'; $('mnext').setAttribute('aria-label', T.monthNext);
+  $('mtoday').textContent = T.today; $('mclose').textContent = '✕'; $('mclose').setAttribute('aria-label', T.monthShut);
+  if (monthOpen()) renderMonth();
   renderScopes(); renderBig(); renderWeek(); renderAnn();
 }
 
@@ -414,6 +484,22 @@ async function load() {
   $('prev').addEventListener('click', () => { S.sel = addDays(mondayOf(S.sel), -7); render(); });
   $('next').addEventListener('click', () => { S.sel = addDays(mondayOf(S.sel), 7); render(); });
   $('cur').addEventListener('click', () => { S.sel = S.today; render(); });
+  $('mon').addEventListener('click', () => { monthOpen() ? closeMonth(true) : openMonth(); });
+  $('mprev').addEventListener('click', () => shiftMonth(-1));
+  $('mnext').addEventListener('click', () => shiftMonth(1));
+  $('mtoday').addEventListener('click', () => { S.sel = S.today; closeMonth(true); render(); });
+  $('mclose').addEventListener('click', () => closeMonth(true));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMonth(true); });
+  document.addEventListener('click', e => { if (monthOpen() && !M().contains(e.target) && !$('mon').contains(e.target)) closeMonth(false); });
+  $('mgrid').addEventListener('keydown', e => {
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+    const cur = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.d;
+    if (!step || !cur) return;
+    e.preventDefault();
+    const t = addDays(cur, step);
+    if (t.slice(0, 7) !== S.mon.slice(0, 7) && !$('mgrid').querySelector('[data-d="' + t + '"]')) { S.mon = t.slice(0, 7) + '-01'; renderMonth(); }
+    const n = $('mgrid').querySelector('[data-d="' + t + '"]'); if (n) n.focus();
+  });
   render();
   load();
   if (WIDGET_URL) setInterval(load, REFRESH_MS);
