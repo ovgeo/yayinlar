@@ -91,9 +91,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline
 .more { font-size: 0.6875rem; font-weight: 700; color: var(--brand-ink); }
 
 /* announcements */
-.ann h2 { margin: 0 0 4px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ann h2 { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 4px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ann .sb { font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 0 4px; cursor: pointer; }
+.ann .sb:hover { color: var(--brand-ink); }
+.ann .sb[aria-pressed="true"] { color: var(--brand-ink); border-bottom-color: var(--brand); }
+.ann .left { margin-left: 6px; white-space: nowrap; font-size: 0.8125rem; font-weight: 700; color: var(--brand-ink); }
+.ann .nothing { color: var(--muted); }
 .ann ul { list-style: none; margin: 0; padding: 0; }
-.ann li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; }
+.ann li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; }
 .ann li:last-child { border-bottom: 0; }
 .ann .ad { color: var(--muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; padding-top: 2px; }
 .ann a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; overflow-wrap: anywhere; }
@@ -150,7 +155,7 @@ const MAX_ANN = 5;
 const STR = {
   en: {
     title: "What's on", today: 'Today', allDay: 'All day', none: 'Nothing scheduled', nextUp: 'Next up',
-    all: 'All', faculty: 'Faculty', university: 'University', ann: 'Latest announcements',
+    all: 'All', faculty: 'Faculty', university: 'University', ann: 'Latest announcements', dates: 'Key dates', noAnn: 'No announcements.', ongoing: 'Ongoing', tomorrow: 'Tomorrow', daysLeft: n => n + ' days left',
     prev: '‹ Prev', next: 'Next ›', thisWeek: 'This week',
     sample: 'Demo entries, shown to preview the layout. Real entries replace them once the data source is connected.',
     loadErr: 'Could not load the latest data. Showing the last saved copy.', loadErrNone: 'Could not load the data right now.',
@@ -158,7 +163,7 @@ const STR = {
   },
   tr: {
     title: 'Neler Var', today: 'Bugün', allDay: 'Tüm gün', none: 'Planlanmış bir etkinlik yok', nextUp: 'Sıradaki',
-    all: 'Tümü', faculty: 'Fakülte', university: 'Üniversite', ann: 'Son duyurular',
+    all: 'Tümü', faculty: 'Fakülte', university: 'Üniversite', ann: 'Son duyurular', dates: 'Önemli tarihler', noAnn: 'Duyuru yok.', ongoing: 'Sürüyor', tomorrow: 'Yarın', daysLeft: n => n + ' gün kaldı',
     prev: '‹ Önceki', next: 'Sonraki ›', thisWeek: 'Bu hafta',
     sample: 'Örnek kayıtlar; yerleşimi göstermek için konuldu. Veri kaynağı bağlanınca gerçek kayıtlar bunların yerini alır.',
     loadErr: 'Güncel veri alınamadı. Son kaydedilen kopya gösteriliyor.', loadErrNone: 'Veri şu anda alınamadı.',
@@ -237,7 +242,7 @@ function demo() {
 }
 
 /* ---- state ---- */
-const S = { today: todayStr(), sel: todayStr(), scope: 'faculty', events: [], ann: [], sample: false, err: '', loading: !!WIDGET_URL };
+const S = { today: todayStr(), sel: todayStr(), scope: 'faculty', lower: 'ann', events: [], ann: [], sample: false, err: '', loading: !!WIDGET_URL };
 const $ = id => document.getElementById(id);
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 const visible = () => S.events.filter(e => S.scope === 'all' || e.scope === S.scope);
@@ -319,14 +324,52 @@ function renderWeek() {
   }
 }
 
-function renderAnn() {
-  const root = $('ann'); root.textContent = '';
+const MAX_DATES = 5;
+const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
+/* key dates: what is still ahead (or running now), nearest deadline first; today's single-day items already sit in the big box above */
+function keyDates() {
+  return visible().filter(e => e.end > S.today || e.start > S.today)
+    .sort((a, b) => (a.start <= S.today ? a.end : a.start).localeCompare(b.start <= S.today ? b.end : b.start) || a.title.localeCompare(b.title))
+    .slice(0, MAX_DATES);
+}
+function dateSpan(e) {
+  if (e.end === e.start) return fmt(e.start, { day: 'numeric', month: 'short' });
+  const s = parse(e.start), t = parse(e.end);
+  return s.getUTCMonth() === t.getUTCMonth() && s.getUTCFullYear() === t.getUTCFullYear()
+    ? s.getUTCDate() + '–' + fmt(e.end, { day: 'numeric', month: 'short' })
+    : fmt(e.start, { day: 'numeric', month: 'short' }) + '–' + fmt(e.end, { day: 'numeric', month: 'short' });
+}
+function annList() {
   /* one scope shows its latest five; "all" shows the latest three of each, newest first, so neither crowds out the other */
-  const list = S.scope === 'all'
+  return S.scope === 'all'
     ? ['faculty', 'university'].flatMap(k => S.ann.filter(a => a.scope === k).slice(0, 3)).sort((a, b) => b.date.localeCompare(a.date))
     : S.ann.filter(a => a.scope === S.scope).slice(0, MAX_ANN);
-  $('annbox').hidden = !list.length;
-  list.forEach(a => {
+}
+function renderAnn() {
+  const anns = annList(), dates = keyDates();
+  $('annbox').hidden = !anns.length && !dates.length;
+  const h = $('annh'); h.textContent = '';
+  [['ann', T.ann], ['dates', T.dates]].forEach(([k, label]) => {
+    const b = el('button', 'sb', label); b.type = 'button'; b.setAttribute('aria-pressed', String(S.lower === k));
+    b.addEventListener('click', () => { S.lower = k; renderAnn(); });
+    h.appendChild(b);
+  });
+  const root = $('ann'); root.textContent = '';
+  if (S.lower === 'dates') {
+    if (!dates.length) { const li = el('li'); li.append(el('span'), el('span', 'nothing', T.noneAhead)); root.appendChild(li); }
+    dates.forEach(e => {
+      const li = el('li');
+      li.appendChild(el('span', 'ad', dateSpan(e)));
+      const w = el('span');
+      if (e.url) { const l = el('a', null, e.title); l.href = e.url; l.target = '_blank'; l.rel = 'noopener'; w.appendChild(l); } else w.appendChild(document.createTextNode(e.title));
+      const n = daysBetween(S.today, e.start);
+      w.appendChild(el('span', 'left', e.start <= S.today ? T.ongoing : (n === 1 ? T.tomorrow : T.daysLeft(n))));
+      li.appendChild(w); root.appendChild(li);
+    });
+    return;
+  }
+  if (!anns.length) { const li = el('li'); li.append(el('span'), el('span', 'nothing', T.noAnn)); root.appendChild(li); }
+  anns.forEach(a => {
     const li = el('li');
     li.appendChild(el('span', 'ad', a.date ? fmt(a.date, { day: 'numeric', month: 'short' }) : ''));
     if (a.url) { const l = el('a', null, a.title); l.href = a.url; l.target = '_blank'; l.rel = 'noopener'; li.appendChild(l); } else li.appendChild(el('span', null, a.title));
@@ -338,7 +381,6 @@ function render() {
   $('h1').textContent = T.title;
   $('sample').textContent = T.sample; $('sample').hidden = !S.sample;
   $('err').textContent = S.err; $('err').hidden = !S.err;
-  $('annh').textContent = T.ann;
   $('prev').textContent = T.prev; $('next').textContent = T.next; $('cur').textContent = T.thisWeek;
   renderScopes(); renderBig(); renderWeek(); renderAnn();
 }
