@@ -1,0 +1,363 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><title>Neler Var</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap">
+<style>
+/* Layout: a big "selected day" box (burgundy date panel + list of that day's items),
+   a seven-day strip under it, then the latest announcements.
+   Same palette as the faculty site and the publications page. One light theme on purpose. */
+:root {
+  --bg: #FFFFFF;
+  --ink: #363636;
+  --muted: #6A6469;
+  --line: #E6E0E2;
+  --line-strong: #C9B6BC;
+  --brand: #9B2441;
+  --brand-ink: #640013;
+  --brand-soft: #FFF5F6;
+  --bar: #F3EFF0;
+  --uni: #3B5A7A;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+  padding-block: 16px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 1.375rem; line-height: 1.25; font-weight: 700; color: var(--brand-ink); }
+.sample { margin: 0; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--brand-soft); color: var(--brand-ink); font-size: 0.8125rem; }
+.err { margin: 0; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--bar); font-size: 0.8125rem; }
+
+button { font: inherit; color: inherit; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.scopes { display: flex; gap: 8px; flex-wrap: wrap; }
+.sc { background: var(--bg); border: 1px solid var(--brand); border-radius: 6px; padding: 6px 12px; min-height: 40px; font-size: 0.875rem; cursor: pointer; }
+.sc[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand-ink); border-color: var(--brand-ink); font-weight: 600; box-shadow: 0 1px 4px rgba(100, 0, 19, 0.18); }
+
+/* the big box */
+.big { display: grid; grid-template-columns: 200px minmax(0, 1fr); border: 1px solid var(--brand); border-radius: 8px; overflow: hidden; background: var(--bg); }
+.date { background: var(--brand); color: #fff; padding: 20px 16px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.kicker { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
+.num { font-size: 4.25rem; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+.dm { font-size: 1rem; font-weight: 600; }
+.dow { font-size: 1rem; }
+.items { padding: 8px 20px; display: flex; flex-direction: column; min-width: 0; }
+.item { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.time { font-size: 0.9375rem; font-weight: 700; color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+.time.allday { font-weight: 600; color: var(--muted); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+.what { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ttl { margin: 0; font-size: 1.0625rem; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+.ttl a { color: inherit; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+.ttl a:hover { color: var(--brand); text-decoration-color: var(--brand); }
+.sub { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 0.875rem; color: var(--muted); }
+.tag { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--brand); color: var(--brand-ink); }
+.tag.uni { border-color: var(--uni); color: var(--uni); }
+.none { padding: 22px 0; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.none p { margin: 0; }
+.none .big-msg { font-size: 1.125rem; font-weight: 600; }
+.jump { background: var(--bg); border: 1px solid var(--brand); color: var(--brand-ink); border-radius: 6px; padding: 8px 14px; min-height: 40px; cursor: pointer; font-size: 0.875rem; font-weight: 600; text-align: left; }
+
+/* week strip */
+.weekbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wk { margin: 0; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.nav { display: flex; gap: 6px; }
+.nb { background: var(--bg); border: 1px solid var(--line-strong); border-radius: 6px; min-width: 44px; min-height: 40px; padding: 0 10px; cursor: pointer; font-size: 0.8125rem; }
+.nb:hover { border-color: var(--brand); }
+.nb { white-space: nowrap; }
+.weekbar { flex-wrap: wrap; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 2px 8px; min-height: 76px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.day:hover { border-color: var(--brand); }
+.day .d1 { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.day .d2 { font-size: 1.25rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.day.today { border-color: var(--brand); box-shadow: inset 0 -3px 0 var(--brand); }
+.day.past .d2 { color: var(--muted); font-weight: 600; }
+.day[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand-ink); box-shadow: 0 1px 4px rgba(100, 0, 19, 0.18); }
+.day[aria-pressed="true"].today { box-shadow: inset 0 -3px 0 var(--brand), 0 1px 4px rgba(100, 0, 19, 0.18); }
+.dots { display: flex; gap: 3px; min-height: 8px; align-items: center; margin-top: 2px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand); }
+.dot.uni { background: var(--bg); border: 1.5px solid var(--uni); }
+.more { font-size: 0.6875rem; font-weight: 700; color: var(--brand-ink); }
+
+/* announcements */
+.ann h2 { margin: 0 0 4px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ann ul { list-style: none; margin: 0; padding: 0; }
+.ann li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; }
+.ann li:last-child { border-bottom: 0; }
+.ann .ad { color: var(--muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.ann a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.ann a:hover { color: var(--brand); text-decoration-color: var(--brand); }
+
+@media (max-width: 640px) {
+  .big { grid-template-columns: minmax(0, 1fr); }
+  .date { flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px; }
+  .num { font-size: 2.75rem; }
+  .items { padding: 4px 16px; }
+  .item { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .day { min-height: 68px; }
+  .day .d2 { font-size: 1.0625rem; }
+}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <h1 id="h1"></h1>
+    <div class="scopes" id="scopes" role="group"></div>
+  </div>
+  <p class="sample" id="sample" hidden></p>
+  <p class="err" id="err" hidden></p>
+
+  <section class="big" id="big" aria-live="polite">
+    <div class="date" id="date"></div>
+    <div class="items" id="items"></div>
+  </section>
+
+  <div class="weekbar">
+    <p class="wk" id="wk"></p>
+    <div class="nav">
+      <button class="nb" id="prev" type="button"></button>
+      <button class="nb" id="cur" type="button"></button>
+      <button class="nb" id="next" type="button"></button>
+    </div>
+  </div>
+  <div class="week" id="week"></div>
+
+  <section class="ann" id="annbox" hidden>
+    <h2 id="annh"></h2>
+    <ul id="ann"></ul>
+  </section>
+</div>
+
+<script>
+/* ---- settings ---- */
+const WIDGET_URL = 'https://script.google.com/macros/s/AKfycbyy5uuS2RcICq_yJCh-_V9FRBvVcjMlNxrdKAd6PrBdh3ICOw37NIB8GRdjyIXmoTtG/exec';            // paste the Google Apps Script web app address between the quotes; empty = demo data
+const LANG = 'tr';                // 'tr' or 'en'
+const TZ = 'Europe/Istanbul';     // the faculty's time zone: "today" is always today there
+const REFRESH_MS = 5 * 60 * 1000;
+const MAX_ANN = 5;
+
+const STR = {
+  en: {
+    title: "What's on", today: 'Today', allDay: 'All day', none: 'Nothing scheduled', nextUp: 'Next up',
+    all: 'All', faculty: 'Faculty', university: 'University', ann: 'Latest announcements',
+    prev: '‹ Prev', next: 'Next ›', thisWeek: 'This week',
+    sample: 'Demo entries, shown to preview the layout. Real entries replace them once the data source is connected.',
+    loadErr: 'Could not load the latest data. Showing the last saved copy.', loadErrNone: 'Could not load the data right now.',
+    until: 'until', noneAhead: 'Nothing coming up.', more: 'more', locale: 'en-GB'
+  },
+  tr: {
+    title: 'Neler Var', today: 'Bugün', allDay: 'Tüm gün', none: 'Planlanmış bir etkinlik yok', nextUp: 'Sıradaki',
+    all: 'Tümü', faculty: 'Fakülte', university: 'Üniversite', ann: 'Son duyurular',
+    prev: '‹ Önceki', next: 'Sonraki ›', thisWeek: 'Bu hafta',
+    sample: 'Örnek kayıtlar; yerleşimi göstermek için konuldu. Veri kaynağı bağlanınca gerçek kayıtlar bunların yerini alır.',
+    loadErr: 'Güncel veri alınamadı. Son kaydedilen kopya gösteriliyor.', loadErrNone: 'Veri şu anda alınamadı.',
+    until: 'şuna kadar', noneAhead: 'Yaklaşan bir etkinlik yok.', more: 'daha', locale: 'tr-TR'
+  }
+};
+const T = STR[LANG];
+
+/* ---- date helpers (all dates are plain YYYY-MM-DD strings, no time-zone surprises) ---- */
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+const parse = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; };
+const addDays = (s, n) => { const d = parse(s); d.setUTCDate(d.getUTCDate() + n); return ymd(d); };
+const mondayOf = s => addDays(s, -((parse(s).getUTCDay() + 6) % 7));
+function todayStr() { return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+const fmt = (s, o) => new Intl.DateTimeFormat(T.locale, Object.assign({ timeZone: 'UTC' }, o)).format(parse(s));
+/* accepts 2026-11-18, 18.11.2026, 18/11/2026 */
+function normDate(v) {
+  v = String(v == null ? '' : v).trim();
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v); if (m) return m[1] + '-' + pad(+m[2]) + '-' + pad(+m[3]);
+  m = /^(\d{1,2})[./](\d{1,2})[./](\d{4})/.exec(v); if (m) return m[3] + '-' + pad(+m[2]) + '-' + pad(+m[1]);
+  return '';
+}
+const fold = s => String(s || '').replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function normScope(v) { return /^(u|ü)/.test(fold(v).trim()) || /univ|üniv/.test(fold(v)) ? 'university' : 'faculty'; }
+const eurl = u => (/^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '');
+
+function normEvents(list) {
+  return (list || []).map(r => {
+    const start = normDate(r.date || r.start);
+    if (!start || !String(r.title || '').trim()) return null;
+    let end = normDate(r.end || r.endDate) || start; if (end < start) end = start;
+    return { start, end, time: String(r.time || '').trim(), title: String(r.title).trim(), place: String(r.place || '').trim(), scope: normScope(r.scope), url: eurl(r.url) };
+  }).filter(Boolean);
+}
+function normAnn(list) {
+  return (list || []).map(r => {
+    const date = normDate(r.date); const title = String(r.title || '').trim();
+    return title ? { date, title, url: eurl(r.url), scope: normScope(r.scope) } : null;
+  }).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/* ---- demo data, always relative to today so the preview looks alive ---- */
+function demo() {
+  const t = todayStr(), d = n => addDays(t, n);
+  const x = LANG === 'tr' ? {
+    board: 'Fakülte Kurulu Toplantısı', room: 'Toplantı Salonu', lec: 'Konuk konuşmacı: Orta Çağ Mantığı ve Okurları', hall: 'Konferans Salonu',
+    senate: 'Üniversite Senato Toplantısı', rect: 'Rektörlük', exam: 'Vize sınavları, ilk oturum', cls: '101–106 numaralı derslikler',
+    fair: 'Kitap fuarı', campus: 'Merkez Yerleşke', defence: 'Yüksek lisans tez savunması', sem: 'Seminer: Cebirsel Mantık ve Köprü Teoremleri', semr: 'Seminer Odası',
+    dep: 'Bölüm toplantısı', ori: 'Yeni personel oryantasyonu', dean: 'Dekanlık',
+    a1: 'Vize sınavı gözetmen çizelgesi yayımlandı', a2: 'Fakülte dergisi kış sayısı için makale çağrısı', a3: 'Erasmus+ başvuru sonuçları', a4: 'Sınav döneminde kütüphane çalışma saatleri'
+  } : {
+    board: 'Faculty Board Meeting', room: 'Meeting Room', lec: 'Guest lecture: Medieval Logic and Its Readers', hall: 'Conference Hall',
+    senate: 'University Senate meeting', rect: 'Rectorate', exam: 'Midterm exams, first session', cls: 'Classrooms 101–106',
+    fair: 'Book fair', campus: 'Central Campus', defence: 'Graduate thesis defence', sem: 'Seminar: Algebraic Logic and Bridge Theorems', semr: 'Seminar Room',
+    dep: 'Department meeting', ori: 'Orientation for new staff', dean: 'Dean’s Office',
+    a1: 'Midterm exam supervision schedule has been published', a2: 'Call for papers: faculty journal winter issue', a3: 'Erasmus+ application results', a4: 'Library opening hours during the exam period'
+  };
+  return {
+    events: [
+      { date: t, time: '10:00', title: x.board, place: x.room, scope: 'faculty' },
+      { date: t, time: '13:30', title: x.lec, place: x.hall, scope: 'faculty' },
+      { date: t, time: '14:00', title: x.senate, place: x.rect, scope: 'university' },
+      { date: d(1), time: '09:00', title: x.exam, place: x.cls, scope: 'faculty' },
+      { date: d(1), end: d(3), title: x.fair, place: x.campus, scope: 'university' },
+      { date: d(3), time: '15:00', title: x.defence, place: '204', scope: 'faculty' },
+      { date: d(5), time: '11:00', title: x.sem, place: x.semr, scope: 'faculty' },
+      { date: d(-1), time: '16:00', title: x.dep, place: '210', scope: 'faculty' },
+      { date: d(8), time: '10:30', title: x.ori, place: x.dean, scope: 'faculty' }
+    ],
+    announcements: [
+      { date: d(-1), title: x.a1, url: '' }, { date: d(-2), title: x.a2, url: '' },
+      { date: d(-4), title: x.a3, url: '' }, { date: d(-6), title: x.a4, url: '' }
+    ]
+  };
+}
+
+/* ---- state ---- */
+const S = { today: todayStr(), sel: todayStr(), scope: 'all', events: [], ann: [], sample: false, err: '' };
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+const visible = () => S.events.filter(e => S.scope === 'all' || e.scope === S.scope);
+const on = (e, day) => e.start <= day && day <= e.end;
+const forDay = day => visible().filter(e => on(e, day)).sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.title.localeCompare(b.title));
+const scopeLabel = s => (s === 'university' ? T.university : T.faculty);
+
+/* ---- render ---- */
+function renderScopes() {
+  const box = $('scopes'); box.textContent = '';
+  [['all', T.all], ['faculty', T.faculty], ['university', T.university]].forEach(([k, label]) => {
+    const b = el('button', 'sc', label); b.type = 'button'; b.setAttribute('aria-pressed', String(S.scope === k));
+    b.addEventListener('click', () => { S.scope = k; render(); });
+    box.appendChild(b);
+  });
+}
+
+function itemRow(e, day) {
+  const row = el('div', 'item');
+  const multi = e.end > e.start;
+  const t = el('div', 'time' + (e.time ? '' : ' allday'), e.time || T.allDay);
+  const w = el('div', 'what');
+  const h = el('p', 'ttl');
+  if (e.url) { const a = el('a', null, e.title); a.href = e.url; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a); } else h.textContent = e.title;
+  const sub = el('div', 'sub');
+  sub.appendChild(el('span', 'tag' + (e.scope === 'university' ? ' uni' : ''), scopeLabel(e.scope)));
+  if (e.place) sub.appendChild(el('span', null, e.place));
+  if (multi) sub.appendChild(el('span', null, T.until + ' ' + fmt(e.end, { day: 'numeric', month: 'short' })));
+  w.append(h, sub);
+  row.append(t, w);
+  return row;
+}
+
+function renderBig() {
+  const day = S.sel;
+  const dateBox = $('date'); dateBox.textContent = '';
+  dateBox.append(
+    el('div', 'kicker', day === S.today ? T.today : fmt(day, { weekday: 'long' })),
+    el('div', 'num', String(parse(day).getUTCDate())),
+    el('div', 'dm', fmt(day, { month: 'long', year: 'numeric' }))
+  );
+  if (day === S.today) dateBox.appendChild(el('div', 'dow', fmt(day, { weekday: 'long' })));
+
+  const box = $('items'); box.textContent = '';
+  const list = forDay(day);
+  if (list.length) { list.forEach(e => box.appendChild(itemRow(e, day))); return; }
+  const none = el('div', 'none');
+  none.appendChild(el('p', 'big-msg', T.none));
+  const nxt = visible().filter(e => e.end >= day && e.start > day).sort((a, b) => a.start.localeCompare(b.start) || (a.time || '').localeCompare(b.time || ''))[0];
+  if (nxt) {
+    const b = el('button', 'jump', T.nextUp + ': ' + nxt.title + ' · ' + fmt(nxt.start, { weekday: 'short', day: 'numeric', month: 'short' }) + (nxt.time ? ', ' + nxt.time : ''));
+    b.type = 'button'; b.addEventListener('click', () => { S.sel = nxt.start; render(); });
+    none.appendChild(b);
+  } else none.appendChild(el('p', null, T.noneAhead));
+  box.appendChild(none);
+}
+
+function renderWeek() {
+  const mon = mondayOf(S.sel);
+  $('wk').textContent = fmt(mon, { day: 'numeric', month: 'short' }) + ' – ' + fmt(addDays(mon, 6), { day: 'numeric', month: 'short', year: 'numeric' });
+  const box = $('week'); box.textContent = '';
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(mon, i);
+    const list = forDay(d);
+    const b = el('button', 'day' + (d === S.today ? ' today' : '') + (d < S.today ? ' past' : '')); b.type = 'button';
+    b.setAttribute('aria-pressed', String(d === S.sel));
+    b.setAttribute('aria-label', fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }) + ', ' + list.length);
+    const dots = el('div', 'dots');
+    list.slice(0, 3).forEach(e => dots.appendChild(el('span', 'dot' + (e.scope === 'university' ? ' uni' : ''))));
+    if (list.length > 3) dots.appendChild(el('span', 'more', '+' + (list.length - 3)));
+    b.append(el('span', 'd1', fmt(d, { weekday: 'short' })), el('span', 'd2', String(parse(d).getUTCDate())), dots);
+    b.addEventListener('click', () => { S.sel = d; render(); });
+    box.appendChild(b);
+  }
+}
+
+function renderAnn() {
+  const root = $('ann'); root.textContent = '';
+  const list = S.ann.filter(a => S.scope === 'all' || a.scope === S.scope).slice(0, MAX_ANN);
+  $('annbox').hidden = !list.length;
+  list.forEach(a => {
+    const li = el('li');
+    li.appendChild(el('span', 'ad', a.date ? fmt(a.date, { day: 'numeric', month: 'short' }) : ''));
+    if (a.url) { const l = el('a', null, a.title); l.href = a.url; l.target = '_blank'; l.rel = 'noopener'; li.appendChild(l); } else li.appendChild(el('span', null, a.title));
+    root.appendChild(li);
+  });
+}
+
+function render() {
+  $('h1').textContent = T.title;
+  $('sample').textContent = T.sample; $('sample').hidden = !S.sample;
+  $('err').textContent = S.err; $('err').hidden = !S.err;
+  $('annh').textContent = T.ann;
+  $('prev').textContent = T.prev; $('next').textContent = T.next; $('cur').textContent = T.thisWeek;
+  renderScopes(); renderBig(); renderWeek(); renderAnn();
+}
+
+/* ---- data ---- */
+const CACHE_KEY = 'neler-var-cache';
+function apply(data) { S.events = normEvents(data.events); S.ann = normAnn(data.announcements); }
+async function load() {
+  if (!WIDGET_URL) { S.sample = true; apply(demo()); render(); return; }
+  try {
+    const r = await fetch(WIDGET_URL, { cache: 'no-store' });
+    if (!r.ok) throw new Error('http ' + r.status);
+    const data = await r.json();
+    apply(data); S.err = '';
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+  } catch (e) {
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (x) {}
+    if (cached) { apply(cached); S.err = T.loadErr; } else S.err = T.loadErrNone;
+  }
+  const t = todayStr(); if (t !== S.today) { if (S.sel === S.today) S.sel = t; S.today = t; }
+  render();
+}
+
+(function init() {
+  $('prev').addEventListener('click', () => { S.sel = addDays(mondayOf(S.sel), -7); render(); });
+  $('next').addEventListener('click', () => { S.sel = addDays(mondayOf(S.sel), 7); render(); });
+  $('cur').addEventListener('click', () => { S.sel = S.today; render(); });
+  render();
+  load();
+  if (WIDGET_URL) setInterval(load, REFRESH_MS);
+})();
+</script>
+</body></html>
