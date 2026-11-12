@@ -355,9 +355,16 @@ const MAX_DATES = 5;
 const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
 /* key dates: what is still ahead (or running now), nearest deadline first; today's single-day items already sit in the big box above */
 function keyDates() {
-  return visible().filter(e => e.end > S.today || e.start > S.today)
-    .sort((a, b) => (a.start <= S.today ? a.end : a.start).localeCompare(b.start <= S.today ? b.end : b.start) || a.title.localeCompare(b.title))
-    .slice(0, MAX_DATES);
+  const due = e => (e.start <= S.today ? e.end : e.start);
+  const up = list => list.filter(e => e.end > S.today || e.start > S.today)
+    .sort((a, b) => due(a).localeCompare(due(b)) || a.title.localeCompare(b.title));
+  if (S.scope !== 'all') return up(visible()).slice(0, MAX_DATES);
+  /* "all": the next three faculty dates and the next two university dates (the other side fills any gap), in date order,
+     so a crowded faculty calendar can't push every university date off the list */
+  const f = up(S.events.filter(e => e.scope === 'faculty')), u = up(S.events.filter(e => e.scope === 'university'));
+  const nu = Math.min(u.length, Math.max(2, MAX_DATES - f.length)), nf = Math.min(f.length, MAX_DATES - nu);
+  return f.slice(0, nf).concat(u.slice(0, nu))
+    .sort((a, b) => due(a).localeCompare(due(b)) || a.title.localeCompare(b.title));
 }
 function dateSpan(e) {
   if (e.end === e.start) return fmt(e.start, { day: 'numeric', month: 'short' });
