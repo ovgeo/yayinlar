@@ -1,0 +1,72 @@
+<title>Hızlı Erişim</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+/* A row of large tiles for the pages people look for most. Same palette as the other faculty pages. */
+:root {
+  --bg: #FFFFFF; --ink: #363636; --muted: #6A6469; --line: #E6E0E2; --line-strong: #C9B6BC;
+  --brand: #9B2441; --brand-ink: #640013; --brand-soft: #FFF5F6;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); font-family: var(--font); color: var(--ink); }
+body { padding: 8px max(16px, env(safe-area-inset-left, 0px)) 8px; font-size: 15px; line-height: 1.35; }
+.tiles { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 520px) { .tiles { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); } }
+.tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 96px; padding: 12px 8px; text-align: center; text-decoration: none; color: var(--ink); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 8px; }
+a.tile:hover, .tile:has(a:hover) { border-color: var(--brand); background: var(--brand-soft); }
+a.tile:focus-visible, .pill:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.tile svg { width: 30px; height: 30px; flex: none; fill: none; stroke: var(--brand); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.lbl { font-size: 0.9375rem; font-weight: 700; color: var(--brand-ink); overflow-wrap: anywhere; }
+.pdf { position: absolute; top: 6px; right: 6px; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 4px; }
+.pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.pill { font-size: 0.8125rem; font-weight: 600; color: var(--brand-ink); text-decoration: none; border: 1px solid var(--brand); border-radius: 999px; padding: 3px 10px; background: var(--bg); }
+.pill:hover { background: var(--brand-soft); border-color: var(--brand-ink); }
+</style>
+
+<nav class="tiles" id="tiles" aria-label="Hızlı erişim"></nav>
+
+<script>
+/* One entry per tile. `url` makes the whole tile a link; `links` gives a tile with several links (like the two timetables).
+   `pdf: true` adds a small PDF mark. `from` / `until` (YYYY-MM-DD) show a tile only inside that window, e.g. an exam-period tile. */
+const ICON = {
+  table: '<path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M3 9.5h18M9 9.5V20M15 9.5V20"/>',
+  cal: '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><circle cx="12" cy="15" r="1.7"/>',
+  mega: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7.5l9 6 9-6"/>'
+};
+const TILES = [
+  { label: 'Ders Programı', icon: 'table', pdf: true, links: [
+    { label: '1. Öğretim', url: 'https://bozok.edu.tr/Dosya/667b265d-1.pdf' },
+    { label: '2. Öğretim', url: 'https://bozok.edu.tr/Dosya/f6d1ef9c-1.pdf' } ] },
+  { label: 'Akademik Takvim', icon: 'cal', pdf: true, url: 'https://bozok.edu.tr/Dosya/7c26a951-4.pdf' },
+  { label: 'Duyurular', icon: 'mega', url: 'https://bozok.edu.tr/okul/ilahiyat-fakultesi/duyurular' },
+  { label: 'İletişim', icon: 'mail', url: 'https://bozok.edu.tr/okul/ilahiyat-fakultesi/sayfa/iletisim/766' }
+  /* Example of a tile that only shows during an exam period:
+  , { label: 'Sınav Görevleri', icon: 'cal', url: 'https://...', from: '2027-01-04', until: '2027-01-31' } */
+];
+
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const NS = 'http://www.w3.org/2000/svg';
+const safe = u => (/^https:\/\//i.test(u || '') ? u : '');
+function icon(name) { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = ICON[name] || ''; return s; }
+function mark() { const m = document.createElement('span'); m.className = 'pdf'; m.textContent = 'PDF'; return m; }
+function lbl(t) { const l = document.createElement('span'); l.className = 'lbl'; l.textContent = t; return l; }
+const nav = document.getElementById('tiles');
+TILES.filter(t => (!t.from || today >= t.from) && (!t.until || today <= t.until)).forEach(t => {
+  if (t.links) {
+    const box = document.createElement('div'); box.className = 'tile'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', t.label);
+    box.append(icon(t.icon), lbl(t.label));
+    const row = document.createElement('div'); row.className = 'pills';
+    t.links.forEach(l => { const u = safe(l.url); if (!u) return; const a = document.createElement('a'); a.className = 'pill'; a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.textContent = l.label; a.setAttribute('aria-label', t.label + ', ' + l.label + (t.pdf ? ' (PDF)' : '')); row.appendChild(a); });
+    box.appendChild(row); if (t.pdf) box.appendChild(mark()); nav.appendChild(box);
+  } else if (safe(t.url)) {
+    const a = document.createElement('a'); a.className = 'tile'; a.href = t.url; a.target = '_blank'; a.rel = 'noopener';
+    if (t.pdf) a.setAttribute('aria-label', t.label + ' (PDF)');
+    a.append(icon(t.icon), lbl(t.label)); if (t.pdf) a.appendChild(mark()); nav.appendChild(a);
+  }
+});
+</script>
