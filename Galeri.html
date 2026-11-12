@@ -1,0 +1,111 @@
+<title>Fotoğraf Galerisi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+/* One photo at a time, filling whatever height the iframe is given. Each photo sits on a blurred copy of itself,
+   so wide, tall or square pictures all fit without cropping or empty bars. Light page, same burgundy as the faculty site. */
+:root {
+  --bg: #FFFFFF;
+  --ink: #363636;
+  --brand: #9B2441;
+  --brand-ink: #640013;
+  --brand-soft: #FFF5F6;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--bg); font-family: var(--font); color: var(--ink); }
+.stage { position: relative; height: 100%; min-height: 180px; overflow: hidden; border-radius: 8px; background: #2a2427; }
+.track { display: flex; height: 100%; transition: transform 0.55s cubic-bezier(.4, 0, .2, 1); will-change: transform; }
+.slide { position: relative; flex: 0 0 100%; height: 100%; overflow: hidden; }
+.slide .bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(26px) brightness(0.75); }
+.slide img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; }
+.slide .fail { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 0.9375rem; text-align: center; padding: 16px; }
+.cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 64px 38px; color: #fff; font-size: 0.9375rem; font-weight: 600; background: linear-gradient(transparent, rgba(0, 0, 0, 0.6)); }
+
+button { font: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 5px var(--brand); }
+.arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.92); color: var(--brand-ink); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+.arrow:hover { background: #fff; color: var(--brand); }
+.arrow svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.prev { left: 12px; } .next { right: 12px; }
+.bar { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 2px; }
+.dot { width: 28px; height: 28px; border: 0; background: none; padding: 0; display: grid; place-items: center; }
+.dot::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(0, 0, 0, 0.25); transition: transform 0.2s, background 0.2s; }
+.dot[aria-current="true"]::before { background: #fff; transform: scale(1.35); }
+.pp { position: absolute; top: 10px; right: 10px; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.85); color: var(--brand-ink); display: grid; place-items: center; }
+.pp svg { width: 16px; height: 16px; fill: currentColor; }
+.count { position: absolute; top: 12px; left: 12px; padding: 3px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 480px) { .arrow { width: 40px; height: 40px; } .prev { left: 6px; } .next { right: 6px; } .cap { padding: 22px 52px 36px; } }
+@media (prefers-reduced-motion: reduce) { .track { transition: none; } }
+</style>
+
+<div class="stage" id="stage" role="group" aria-roledescription="carousel" aria-label="Fotoğraf galerisi" tabindex="0">
+  <div class="track" id="track"></div>
+  <span class="count" id="count" aria-hidden="true"></span>
+  <button class="pp" id="pp" type="button" aria-label="Otomatik geçişi durdur"></button>
+  <button class="arrow prev" id="prev" type="button" aria-label="Önceki fotoğraf"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="arrow next" id="next" type="button" aria-label="Sonraki fotoğraf"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  <div class="bar" id="dots"></div>
+</div>
+
+<script>
+/* Photos, in the order they should appear. `cap` is an optional caption shown over the lower edge of the photo. */
+const IMAGES = [
+  { src: 'https://bozok.edu.tr/Uploadpicture/edf664d6-8.jpg', alt: 'Fotoğraf 1', cap: '' },
+  { src: 'https://bozok.edu.tr/Uploadpicture/981a6061-f.jpeg', alt: 'Fotoğraf 2', cap: '' },
+  { src: 'https://bozok.edu.tr/Uploadpicture/8d056e6c-1.jpeg', alt: 'Fotoğraf 3', cap: '' }
+];
+const AUTOPLAY_MS = 6000;   // time on each photo; 0 turns automatic change off
+
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PLAY = '<svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z"/></svg>', PAUSE = '<svg viewBox="0 0 16 16"><path d="M3 2h4v12H3zM9 2h4v12H9z"/></svg>';
+let cur = 0, playing = AUTOPLAY_MS > 0 && !reduce, timer = null, hover = false;
+
+IMAGES.forEach((im, i) => {
+  const s = el('div', 'slide'); s.setAttribute('role', 'group'); s.setAttribute('aria-roledescription', 'slide'); s.setAttribute('aria-label', (i + 1) + ' / ' + IMAGES.length);
+  const bg = el('div', 'bg'); bg.style.backgroundImage = 'url("' + im.src + '")';
+  const img = new Image(); img.alt = im.alt || ''; img.decoding = 'async'; img.src = im.src;
+  img.addEventListener('error', () => { img.remove(); bg.remove(); s.appendChild(el('div', 'fail', 'Fotoğraf yüklenemedi')); });
+  s.append(bg, img);
+  if (im.cap) s.appendChild(el('div', 'cap', im.cap));
+  $('track').appendChild(s);
+  const d = el('button', 'dot'); d.type = 'button'; d.setAttribute('aria-label', 'Fotoğraf ' + (i + 1));
+  d.addEventListener('click', () => go(i, true)); $('dots').appendChild(d);
+});
+
+function show() {
+  $('track').style.transform = 'translateX(' + (-100 * cur) + '%)';
+  [...$('track').children].forEach((s, i) => s.setAttribute('aria-hidden', String(i !== cur)));
+  [...$('dots').children].forEach((d, i) => d.setAttribute('aria-current', String(i === cur)));
+  $('count').textContent = (cur + 1) + ' / ' + IMAGES.length;
+  $('pp').innerHTML = playing ? PAUSE : PLAY;
+  $('pp').setAttribute('aria-label', playing ? 'Otomatik geçişi durdur' : 'Otomatik geçişi başlat');
+  $('pp').hidden = AUTOPLAY_MS <= 0 || reduce;
+  $('track').setAttribute('aria-live', playing ? 'off' : 'polite');
+}
+function go(i, user) { cur = (i + IMAGES.length) % IMAGES.length; if (user) { schedule(); } show(); }
+function schedule() { clearTimeout(timer); if (playing && !hover && !document.hidden && IMAGES.length > 1) timer = setTimeout(() => { go(cur + 1); schedule(); }, AUTOPLAY_MS); }
+
+$('prev').addEventListener('click', () => go(cur - 1, true));
+$('next').addEventListener('click', () => go(cur + 1, true));
+$('pp').addEventListener('click', () => { playing = !playing; show(); schedule(); });
+// Pause while a mouse rests on the gallery; touches never count, so autoplay can't get stuck paused on phones.
+$('stage').addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { hover = true; schedule(); } });
+$('stage').addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { hover = false; schedule(); } });
+$('stage').addEventListener('keydown', e => { if (e.key === 'ArrowLeft') { go(cur - 1, true); e.preventDefault(); } else if (e.key === 'ArrowRight') { go(cur + 1, true); e.preventDefault(); } });
+document.addEventListener('visibilitychange', schedule);
+let x0 = null, y0 = null;
+$('stage').addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+$('stage').addEventListener('touchend', e => {
+  if (x0 == null) return;
+  const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1), true);
+}, { passive: true });
+if (IMAGES.length < 2) { $('prev').hidden = $('next').hidden = $('dots').hidden = $('count').hidden = true; }
+show(); schedule();
+</script>
