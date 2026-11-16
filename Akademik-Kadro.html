@@ -50,6 +50,10 @@ ul { list-style: none; margin: 0; padding: 0; }
 .btn.pri { background: var(--brand); color: #fff; }
 .btn.pri:hover { background: var(--brand-ink); border-color: var(--brand-ink); }
 .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mail { grid-column: 1 / -1; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--brand-soft); color: var(--brand-ink); font-size: 0.9375rem; font-weight: 600; word-break: break-all; user-select: all; -webkit-user-select: all; }
+.mail[hidden] { display: none; }
+.btn { cursor: pointer; font-family: inherit; }
+.btn.done { background: var(--brand-ink); border-color: var(--brand-ink); color: #fff; }
 .ext { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; min-width: 74px; text-align: right; }
 .none { padding: 28px 0; color: var(--muted); text-align: center; }
 @media (max-width: 640px) {
@@ -163,6 +167,14 @@ function sorted(list, g) {
   if (g === 'dek') return list.slice().sort((a, b) => a.i - b.i);   // Dekanlık keeps the faculty's own order: Dekan first
   return list.slice().sort((a, b) => (isHead(b) - isHead(a)) || ((RANK[a.u] || 9) - (RANK[b.u] || 9)) || a.i - b.i);
 }
+async function copyText(t) {
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) { /* blocked inside the frame: use the fallback */ }
+  try {
+    const x = document.createElement('textarea'); x.value = t; x.setAttribute('readonly', ''); x.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(x); x.select(); x.setSelectionRange(0, t.length);
+    const ok = document.execCommand('copy'); x.remove(); return ok;
+  } catch (e) { return false; }
+}
 function card(p) {
   const li = el('li', 'p'), info = el('div');
   if (p.u) info.appendChild(el('div', 'u', p.u));
@@ -174,12 +186,34 @@ function card(p) {
     const a = el('a', 'btn pri'); a.href = AVESIS + (p.av || p.m); a.target = '_blank'; a.rel = 'noopener';
     a.setAttribute('aria-label', p.n + ' – Avesis profili (yeni sekmede açılır)'); a.textContent = 'Avesis profili'; acts.appendChild(a);
   }
+  let box = null;
   if (p.m) {
-    const m = el('a', 'btn'); m.href = 'mailto:' + p.m + '@' + DOMAIN[p.dom]; m.setAttribute('aria-label', p.n + ' – e-posta gönder');
-    m.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>'; m.appendChild(document.createTextNode('E-posta')); acts.appendChild(m);
+    const addr = p.m + '@' + DOMAIN[p.dom];   // assembled here, never written out in the page
+    const icon = d => '<svg viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>';
+    const show = el('button', 'btn'); show.type = 'button'; show.setAttribute('aria-expanded', 'false');
+    show.setAttribute('aria-label', p.n + ' – e-posta adresini göster');
+    const showLbl = open => { show.innerHTML = icon('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'); show.appendChild(document.createTextNode(open ? 'Gizle' : 'E-postayı göster')); };
+    showLbl(false);
+    box = el('p', 'mail'); box.hidden = true;
+    show.addEventListener('click', () => {
+      const open = box.hidden; box.hidden = !open; box.textContent = open ? addr : '';
+      show.setAttribute('aria-expanded', String(open)); showLbl(open);
+    });
+    const copy = el('button', 'btn'); copy.type = 'button'; copy.setAttribute('aria-label', p.n + ' – e-posta adresini kopyala');
+    const copyLbl = t => { copy.innerHTML = icon('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>'); copy.appendChild(document.createTextNode(t)); };
+    copyLbl('Kopyala');
+    let timer;
+    copy.addEventListener('click', async () => {
+      const ok = await copyText(addr);
+      clearTimeout(timer);
+      if (ok) { copy.classList.add('done'); copyLbl('Kopyalandı'); }
+      else { box.hidden = false; box.textContent = addr; show.setAttribute('aria-expanded', 'true'); showLbl(true); copyLbl('Elle kopyalayın'); }
+      timer = setTimeout(() => { copy.classList.remove('done'); copyLbl('Kopyala'); }, 2000);
+    });
+    acts.append(show, copy);
   }
   if (p.d) acts.appendChild(el('span', 'ext', 'Dahili ' + p.d));
-  li.append(info, acts); return li;
+  li.append(info, acts); if (box) li.appendChild(box); return li;
 }
 function render() {
   const q = fold(query.trim()).split(/\s+/).filter(Boolean);
