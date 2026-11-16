@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Akademik ve İdari Personel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+:root {
+  --bg: #FFFFFF; --ink: #363636; --muted: #5F5F5F; --line: #E4E0E1; --line-strong: #B9B2B4;
+  --brand: #9B2441; --brand-ink: #640013; --brand-soft: #FFF5F6; --uni: #3B5A7A;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; padding: 0 16px 24px; font-family: var(--font); color: var(--ink); font-size: 1rem; line-height: 1.45; }
+.wrap { max-width: 920px; margin: 0 auto; }
+button, input { font: inherit; }
+:focus-visible { outline: 3px solid var(--brand-ink); outline-offset: 2px; }
+
+/* search + filters stay at the top while the list scrolls */
+.bar { position: sticky; top: 0; z-index: 3; background: var(--bg); padding: 14px 0 10px; border-bottom: 1px solid var(--line); }
+.search { position: relative; }
+.search input { width: 100%; min-height: 44px; padding: 0 44px 0 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--bg); color: var(--ink); font-size: 1rem; }
+.search input:focus { border-color: var(--brand); outline: 3px solid var(--brand-ink); outline-offset: 1px; }
+.search .x { position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 1.25rem; cursor: pointer; display: none; }
+.search .x:hover { background: var(--brand-soft); color: var(--brand-ink); }
+.search.has .x { display: block; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--brand); border-radius: 8px; background: var(--bg); color: var(--brand-ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+.chip:hover { background: var(--brand-soft); }
+.chip[aria-pressed="true"] { background: var(--brand); color: #fff; }
+.count { margin: 8px 0 0; font-size: 0.8125rem; color: var(--muted); }
+
+h2 { margin: 22px 0 4px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand-ink); }
+ul { list-style: none; margin: 0; padding: 0; }
+.p { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.p:last-child { border-bottom: 0; }
+.u { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.n { font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+.a { margin-top: 2px; font-size: 0.9375rem; color: var(--ink); }
+.roles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.role { display: inline-block; padding: 1px 8px; border: 1.5px solid var(--brand); border-radius: 4px; color: var(--brand-ink); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid var(--brand); border-radius: 8px; background: var(--bg); color: var(--brand-ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.btn:hover { background: var(--brand-soft); }
+.btn.pri { background: var(--brand); color: #fff; }
+.btn.pri:hover { background: var(--brand-ink); border-color: var(--brand-ink); }
+.btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ext { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; min-width: 74px; text-align: right; }
+.none { padding: 28px 0; color: var(--muted); text-align: center; }
+@media (max-width: 640px) {
+  .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .chip { flex: none; }
+  .p { grid-template-columns: minmax(0, 1fr); }
+  .acts { justify-content: flex-start; }
+  .ext { text-align: left; min-width: 0; order: 3; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="search" id="search">
+      <input id="q" type="search" placeholder="İsim, alan veya görev ara…" autocomplete="off" aria-label="Personel ara">
+      <button class="x" id="clear" type="button" aria-label="Aramayı temizle">×</button>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Bölüm filtresi"></div>
+    <p class="count" id="count" aria-live="polite"></p>
+  </div>
+  <div id="list"></div>
+</div>
+
+<script>
+/* Staff, as listed on the faculty page (bozok.edu.tr/okul/ilahiyat-fakultesi/sayfa/akademik-ve-idari-personel/762).
+   Each row: [unvan, name, alan, dahili, e-mail name, mail domain, groups, roles, avesis]
+   - groups: first one is where the person is listed; any further ones only add the person to that filter.
+       dek = Dekanlık, tib = Temel İslam Bilimleri, fdb = Felsefe ve Din Bilimleri, its = İslam Tarihi ve Sanatları, idr = İdari Personel
+   - mail domain: 'y' = yobu.edu.tr, 'b' = bozok.edu.tr (the address is put together in the browser, not written out in the page)
+   - avesis: omitted = https://avesis.bozok.edu.tr/<e-mail name> (all academic staff); '-' = no Avesis button; any other text = that profile name */
+const GROUPS = { dek: 'Dekanlık', tib: 'Temel İslam Bilimleri', fdb: 'Felsefe ve Din Bilimleri', its: 'İslam Tarihi ve Sanatları', idr: 'İdari Personel' };
+const ORDER = ['dek', 'tib', 'fdb', 'its', 'idr'];
+const AVESIS = 'https://avesis.bozok.edu.tr/';
+const DOMAIN = { y: 'yobu.edu.tr', b: 'bozok.edu.tr' };
+const ARA = 'Arap Dili ve Belagatı', KUR = 'Kuran-ı Kerim Okuma ve Kıraat', SIY = 'Siyer-i Nebi ve İslam Tarihi', SAN = 'İslam Sanatları ve Dini Musiki';
+const P = [
+  ['Prof. Dr.', 'İsmail PIRLANTA', '', '6101', 'ismail.pirlanta', 'y', ['dek'], ['Dekan']],
+  ['Prof. Dr.', 'Mehmet TÖZLUYURT', '', '6176', 'mehmet.tozluyurt', 'y', ['dek', 'tib'], ['Dekan Yardımcısı', 'Temel İslam Bilimleri Bölüm Başkanı']],
+  ['Dr. Öğr. Üyesi', 'Yasin GÖKHAN', '', '6112', 'yasin.gokhan', 'y', ['dek'], ['Dekan Yardımcısı']],
+  ['Prof. Dr.', 'Abdulkadir DÜNDAR', '', '6174', 'abdulkadir.dundar', 'y', ['its'], ['İslam Tarihi ve Sanatları Bölüm Başkanı']],
+  ['Prof. Dr.', 'Talip ÖZDEŞ', 'Tefsir', '5450', 'talip.ozdes', 'y', ['tib']],
+  ['Prof. Dr.', 'Ömer DEMİR', '', '5452', 'o.demir', 'y', ['fdb'], ['Felsefe ve Din Bilimleri Bölüm Başkanı']],
+  ['Prof. Dr.', 'Hakkı AYDIN', 'İslam Hukuku', '5451', 'hakki.aydin', 'y', ['tib']],
+  ['Prof. Dr.', 'Gülhan TÜRK', ARA, '5402', 'gulhan.turk', 'y', ['tib']],
+  ['Doç. Dr.', 'Halil ÖZTÜRK', 'Kelam', '5441', 'halil.ozturk', 'y', ['tib']],
+  ['Doç. Dr.', 'Sezai BEKDEMİR', 'İslam Hukuku', '5440', 'sezai.bekdemir', 'y', ['tib']],
+  ['Doç. Dr.', 'Yusuf AKGÜL', 'Hadis', '5448', 'yusuf.akgul', 'y', ['tib']],
+  ['Doç. Dr.', 'Selahattin YAKUT', 'Din Psikolojisi', '5495', 'selahattin.yakut', 'y', ['fdb']],
+  ['Doç. Dr.', 'Ali BİNOL', 'Tefsir', '5319', 'ali.binol', 'y', ['tib']],
+  ['Doç. Dr.', 'Nilüfer ATEŞ', SIY, '5358', 'nilufer.ates', 'y', ['its']],
+  ['Dr. Öğr. Üyesi', 'İhsan Övge ÖZTÜRK', 'Mantık', '6176', 'i.ovge.ozturk', 'y', ['fdb']],
+  ['Dr. Öğr. Üyesi', 'Hüseyin YÜNER', SAN, '5350', 'huseyin.yuner', 'y', ['its']],
+  ['Dr. Öğr. Üyesi', 'Abdulali ALİEV', 'Dinler Tarihi', '5497', 'a.aliev', 'y', ['fdb']],
+  ['Dr. Öğr. Üyesi', 'Münteha BEKİ', 'Din Felsefesi', '5498', 'munteha.beki', 'y', ['fdb']],
+  ['Dr. Öğr. Üyesi', 'Aliya MUTALLİMOVA', 'Dinler Tarihi', '5336', 'aliya.sharafullina', 'y', ['fdb']],
+  ['Dr. Öğr. Üyesi', 'Fatma GÖÇMEN', 'Din Eğitimi', '5494', 'fatma.gocmen', 'b', ['fdb']],
+  ['Dr. Öğr. Üyesi', 'Tuğba YILDIRIM', 'Tefsir', '5439', 'tugba.uysal', 'y', ['tib']],
+  ['Dr. Öğr. Üyesi', 'Edibe BOYRAZ', 'Tasavvuf', '5434', 'edibe.boyraz', 'y', ['tib']],
+  ['Dr. Öğr. Üyesi', 'Talha ERDEM', 'Tefsir', '5326', 'talha.erdem', 'y', ['tib']],
+  ['Dr. Öğr. Üyesi', 'Dadaş MUTALLİM', SIY, '5355', 'dadas.mutallim', 'y', ['its']],
+  ['Dr. Öğr. Üyesi', 'Yunus ÇAKIR', ARA, '6108', 'yunus.cakir', 'y', ['tib']],
+  ['Dr. Öğr. Üyesi', 'Hatice GÖKTAŞ', 'İslam Felsefesi', '5420', 'hatice.goktas', 'y', ['fdb']],
+  ['Öğr. Gör. Dr.', 'N. Sümeyra ÇALIK', ARA, '6123', 'sumeyra.calik', 'y', ['tib']],
+  ['Öğr. Gör. Dr.', 'Adem YENER', ARA, '6140', 'adem.yener', 'y', ['tib']],
+  ['Öğr. Gör.', 'İbrahim KILINÇER', 'Tefsir', '6142', 'ibrahim.kilincer', 'y', ['tib']],
+  ['Öğr. Gör.', 'Yasin BEDİR', KUR, '5470', 'yasin.bedir', 'y', ['tib']],
+  ['Öğr. Gör.', 'Yasin CENAN', KUR, '5328', 'yasin.cenan', 'y', ['tib']],
+  ['Öğr. Gör.', 'Anas MSLM', ARA, '6170', 'anas.mslm', 'y', ['tib']],
+  ['Öğr. Gör.', 'Münevver BAYRAM', ARA, '6123', 'munevver.bayram', 'y', ['tib']],
+  ['Öğr. Gör.', 'Habip UZ', ARA, '6129', 'habip.uz', 'y', ['tib']],
+  ['Öğr. Gör.', 'Mehmet ÖZÜDOĞRU', KUR, '5458', 'mehmet.ozudogru', 'b', ['tib']],
+  ['Arş. Gör. Dr.', 'Safiye İNCEYILMAZ MSLM', 'Hadis', '5437', 'safiye.inceyilmaz', 'y', ['tib']],
+  ['Arş. Gör. Dr.', 'Esma AYGÜN YAKIN', 'Din Felsefesi', '5492', 'esma.yakin', 'y', ['fdb']],
+  ['Arş. Gör. Dr.', 'Rahime Eymen BAKIR', 'Din Psikolojisi', '5461', 'r.eymen.bakir', 'y', ['fdb']],
+  ['Arş. Gör. Dr.', 'Murat ÖKTEM', 'Hadis', '5424', 'murat.oktem', 'b', ['tib']],
+  ['Arş. Gör.', 'Emre KARADAVUT', SAN, '5361', 'emre.karadavut', 'y', ['its']],
+  ['Arş. Gör.', 'Tuğba ŞAHBAZ ALTINSOY', SIY, '5357', 'tugba.sahbaz', 'y', ['its']],
+  ['Arş. Gör.', 'Alper ÇIRPAN', ARA, '6144', 'alper.cirpan', 'y', ['tib']],
+  ['Arş. Gör.', 'Yeter ÖZDEMİR', 'İslam Hukuku', '5426', 'yeter.ozdemir', 'y', ['tib']],
+  ['Arş. Gör.', 'Derya EREN', 'Din Sosyolojisi', '', 'derya.eren', 'y', ['fdb']],
+  ['Arş. Gör.', 'Muhammet MAZLUM', 'Kelam', '', '', '', ['tib'], [], '-'],
+  ['Arş. Gör.', 'Elif BİLGE', 'Din Eğitimi', '5460', 'elif.bilge', 'y', ['fdb']],
+  ['Arş. Gör.', 'Hümeyra ÖZTÜRK', 'Tasavvuf', '', 'humeyra.ozturk', 'b', ['tib']],
+  /* idari personel: no Avesis */
+  ['', 'Cüma ASLAN', 'Fakülte Sekreteri', '6149', 'cuma.aslan', 'y', ['idr'], [], '-'],
+  ['', 'Nezaket KIZILAY', 'Dekan Sekreteri', '6100', 'nezaket.kizilay', 'y', ['idr'], [], '-'],
+  ['', 'Ebu Bekir KAYA', 'Bölüm Sekreteri – Öğrenci İşleri', '6120', 'e.bekir.kaya', 'y', ['idr'], [], '-'],
+  ['', 'Leyla SİPAHİ', 'Mutemet', '6168', 'leyla.sipahi', 'y', ['idr'], [], '-'],
+  ['', 'Seda KURU', 'Yazı İşleri', '6169', 'seda.kuru', 'y', ['idr'], [], '-'],
+  ['', 'Nesibe ORTAÇ', 'Büro Personeli', '6105', 'nesibe.ortac', 'y', ['idr'], [], '-'],
+  ['', 'Mustafa KARAKOÇ', 'Kütüphane', '5459', 'mustafa.karakoc', 'b', ['idr'], [], '-'],
+  ['', 'Semra YILMAZ', 'Çay Ocağı (Ek Bina)', '', '', '', ['idr'], [], '-'],
+  ['', 'Şule ŞAHİN', 'Çay Ocağı (Ana Bina)', '6160', '', '', ['idr'], [], '-'],
+  ['', 'Güvenlik', '', '6147', '', '', ['idr'], [], '-']
+];
+const RANK = { 'Prof. Dr.': 1, 'Doç. Dr.': 2, 'Dr. Öğr. Üyesi': 3, 'Öğr. Gör. Dr.': 4, 'Öğr. Gör.': 5, 'Arş. Gör. Dr.': 6, 'Arş. Gör.': 7 };
+const people = P.map((r, i) => ({ i, u: r[0], n: r[1], a: r[2], d: r[3], m: r[4], dom: r[5], g: r[6], roles: r[7] || [], av: r[8] }));
+const isHead = p => p.roles.some(x => /Başkan/.test(x) && !/Dekan/.test(x)) || p.roles.some(x => /Bölüm Başkanı/.test(x));
+people.forEach(p => { p.key = fold([p.u, p.n, p.a, ...p.roles, ...p.g.map(g => GROUPS[g])].join(' ')); });
+
+function fold(s) {   // lower-case without Turkish letters' marks, so "ozturk" finds "ÖZTÜRK" and "ismail" finds "İsmail"
+  return s.toLocaleLowerCase('tr').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i̇/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/â/g, 'a').replace(/î/g, 'i').replace(/û/g, 'u');
+}
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+let filter = 'all', query = '';
+
+function sorted(list, g) {
+  if (g === 'dek') return list.slice().sort((a, b) => a.i - b.i);   // Dekanlık keeps the faculty's own order: Dekan first
+  return list.slice().sort((a, b) => (isHead(b) - isHead(a)) || ((RANK[a.u] || 9) - (RANK[b.u] || 9)) || a.i - b.i);
+}
+function card(p) {
+  const li = el('li', 'p'), info = el('div');
+  if (p.u) info.appendChild(el('div', 'u', p.u));
+  info.appendChild(el('div', 'n', p.n));
+  if (p.a) info.appendChild(el('div', 'a', p.a));
+  if (p.roles.length) { const r = el('div', 'roles'); p.roles.forEach(x => r.appendChild(el('span', 'role', x))); info.appendChild(r); }
+  const acts = el('div', 'acts');
+  if (p.g[0] !== 'idr' && p.av !== '-' && p.m) {
+    const a = el('a', 'btn pri'); a.href = AVESIS + (p.av || p.m); a.target = '_blank'; a.rel = 'noopener';
+    a.setAttribute('aria-label', p.n + ' – Avesis profili (yeni sekmede açılır)'); a.textContent = 'Avesis profili'; acts.appendChild(a);
+  }
+  if (p.m) {
+    const m = el('a', 'btn'); m.href = 'mailto:' + p.m + '@' + DOMAIN[p.dom]; m.setAttribute('aria-label', p.n + ' – e-posta gönder');
+    m.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>'; m.appendChild(document.createTextNode('E-posta')); acts.appendChild(m);
+  }
+  if (p.d) acts.appendChild(el('span', 'ext', 'Dahili ' + p.d));
+  li.append(info, acts); return li;
+}
+function render() {
+  const q = fold(query.trim()).split(/\s+/).filter(Boolean);
+  const match = p => q.every(t => p.key.includes(t));
+  const shown = people.filter(p => (filter === 'all' || p.g.includes(filter)) && match(p));
+  const list = $('list'); list.textContent = '';
+  const groups = filter === 'all' ? ORDER : [filter];
+  groups.forEach(g => {
+    const mem = sorted(shown.filter(p => filter === 'all' ? p.g[0] === g : true), g);
+    if (!mem.length) return;
+    list.appendChild(el('h2', null, GROUPS[g]));
+    const ul = el('ul'); mem.forEach(p => ul.appendChild(card(p))); list.appendChild(ul);
+  });
+  if (!shown.length) list.appendChild(el('p', 'none', 'Aramanızla eşleşen kimse bulunamadı.'));
+  $('count').textContent = shown.length + ' kişi';
+  $('search').classList.toggle('has', !!query);
+  [...$('chips').children].forEach(c => c.setAttribute('aria-pressed', String(c.dataset.f === filter)));
+}
+[['all', 'Tümü'], ...ORDER.map(g => [g, GROUPS[g]])].forEach(([f, t]) => {
+  const b = el('button', 'chip', t); b.type = 'button'; b.dataset.f = f; b.addEventListener('click', () => { filter = f; render(); }); $('chips').appendChild(b);
+});
+$('q').addEventListener('input', e => { query = e.target.value; render(); });
+$('clear').addEventListener('click', () => { query = ''; $('q').value = ''; render(); $('q').focus(); });
+render();
+</script>
+</body>
+</html>
