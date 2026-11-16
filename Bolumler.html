@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bölümler ve Anabilim Dalları</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+:root {
+  --bg: #FFFFFF; --ink: #363636; --muted: #5F5F5F; --line: #E4E0E1; --line-strong: #B9B2B4;
+  --brand: #9B2441; --brand-ink: #640013; --brand-soft: #FFF5F6;
+  --c-tib: #9B2441; --c-fdb: #1F6F6B; --c-its: #8F5F00;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; padding: 0 16px 28px; font-family: var(--font); color: var(--ink); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 920px; margin: 0 auto; }
+button, input { font: inherit; }
+:focus-visible { outline: 3px solid #1b1b1b; outline-offset: 2px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- stage: the flower ---------- */
+.stage { position: relative; padding-top: 8px; text-align: center; }
+.flower { display: block; width: min(100%, 430px); height: auto; margin: 0 auto; overflow: visible; }
+.sway { transform-box: view-box; transform-origin: 280px 250px; animation: sway 9s ease-in-out infinite alternate; }
+.pt { cursor: pointer; }
+.pt .grow { transform-box: view-box; transform-origin: 280px 250px; transition: transform .45s cubic-bezier(.3,1.5,.5,1), opacity .3s, filter .3s; animation: bloom 1.1s cubic-bezier(.2,1.35,.4,1) backwards; animation-delay: var(--d); }
+.pt .shape { stroke: #fff; stroke-width: 3; }
+.pt:hover .grow { transform: scale(1.04); }
+.flower.has-sel .pt:not(.sel) .grow { transform: scale(.93); opacity: .6; }
+.flower.has-sel .pt:not(.sel):hover .grow { opacity: .85; transform: scale(.97); }
+.pt.sel .grow { transform: scale(1.08); filter: drop-shadow(0 8px 10px rgba(0,0,0,.28)); }
+.pt text { fill: #fff; font-family: var(--font); font-weight: 700; font-size: 17px; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: rgba(0,0,0,.18); stroke-width: 2px; }
+.vein { fill: none; stroke: rgba(255,255,255,.28); stroke-width: 2; stroke-linecap: round; }
+.core { fill: #fff; stroke: var(--brand); stroke-width: 3; }
+.core-t { font-family: var(--font); font-weight: 700; font-size: 12.5px; letter-spacing: .12em; fill: var(--brand-ink); text-anchor: middle; }
+.ping { fill: none; stroke: var(--brand); stroke-width: 2; transform-box: view-box; transform-origin: 280px 250px; animation: ping 4.5s ease-out infinite; }
+.stamens { transform-box: view-box; transform-origin: 280px 250px; animation: spin 50s linear infinite; }
+.stamens circle { fill: #E0B34A; stroke: #fff; stroke-width: 1.5; }
+.pollen circle { fill: #E0B34A; opacity: 0; animation: drift var(--t) ease-in-out infinite; animation-delay: var(--d); }
+.burst { fill: none; stroke-width: 4; opacity: 0; transform-box: view-box; transform-origin: 280px 250px; }
+.burst.go { animation: burst .9s ease-out; }
+@keyframes bloom { from { transform: scale(.04) rotate(-60deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes ping { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes drift { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: .75; } 100% { transform: translate(var(--x), -90px); opacity: 0; } }
+@keyframes burst { from { transform: scale(.5); opacity: .8; } to { transform: scale(3.2); opacity: 0; } }
+
+.pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px 0 0; }
+.pill { min-height: 44px; padding: 0 16px; border: 2px solid var(--c); border-radius: 999px; background: var(--bg); color: var(--c); font-size: .875rem; font-weight: 700; cursor: pointer; transition: background .2s, color .2s, transform .2s; }
+.pill small { font-weight: 600; opacity: .85; margin-left: 4px; }
+.pill:hover { transform: translateY(-2px); }
+.pill[aria-selected="true"] { background: var(--c); color: #fff; }
+.hint { margin: 10px 0 0; font-size: .875rem; color: var(--muted); }
+.hint.gone { display: none; }
+
+/* ---------- search ---------- */
+.find { margin-top: 18px; }
+.srch { width: 100%; min-height: 46px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 1rem; }
+.res { margin: 8px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 12px; max-height: 320px; overflow: auto; }
+.res[hidden] { display: none; }
+.res button { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 9px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
+.res li:last-child button { border-bottom: 0; }
+.res button:hover, .res button:focus-visible { background: var(--brand-soft); }
+.res .k { flex: none; width: 88px; font-size: .6875rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--brand-ink); }
+.res .w { font-size: .75rem; color: var(--muted); display: block; }
+.cnt { margin: 6px 4px 0; font-size: .8125rem; color: var(--muted); }
+
+/* ---------- department panel ---------- */
+.dept { margin-top: 26px; scroll-margin-top: 12px; }
+.dept[hidden] { display: none; }
+.dept.in { animation: rise .6s ease both; }
+.dh { padding-left: 14px; border-left: 5px solid var(--c); }
+.dh h2 { margin: 0; font-size: 1.375rem; line-height: 1.25; color: var(--c); }
+.dh .who { margin: 6px 0 0; font-size: .9375rem; color: var(--ink); }
+.dh .who span { color: var(--muted); }
+.stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.stats li { padding: 3px 12px; border-radius: 999px; background: color-mix(in srgb, var(--c) 10%, #fff); color: var(--c); font-size: .8125rem; font-weight: 700; }
+.intro p { margin: 12px 0 0; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+.btn { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--c); border-radius: 8px; background: var(--bg); color: var(--c); font-size: .875rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--c) 8%, #fff); }
+
+/* ---------- the vine ---------- */
+.vine { position: relative; list-style: none; margin: 22px 0 0; padding: 0 0 6px; }
+.vine::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; margin-left: -2px; border-radius: 2px; background: linear-gradient(var(--c), color-mix(in srgb, var(--c) 35%, #fff)); transform-origin: top; animation: stem 1s cubic-bezier(.3,.7,.3,1) both; }
+.leaf { position: relative; display: flex; margin: 0 0 14px; animation: leafin .55s cubic-bezier(.2,1.2,.4,1) both; animation-delay: calc(.35s + var(--i) * 85ms); }
+.leaf:nth-child(even) { justify-content: flex-end; }
+.card { width: calc(50% - 34px); border: 1.5px solid var(--c); border-radius: 22px 4px 22px 4px; background: #fff; transition: width .45s cubic-bezier(.3,.9,.3,1), box-shadow .25s, transform .25s; position: relative; z-index: 1; }
+.leaf:nth-child(even) .card { border-radius: 4px 22px 4px 22px; }
+.card:hover { box-shadow: 0 6px 16px rgba(0,0,0,.12); transform: translateY(-2px); }
+.leaf.open .card { width: 100%; box-shadow: 0 8px 22px rgba(0,0,0,.12); transform: none; }
+.lh { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; border: 0; border-radius: inherit; background: none; text-align: left; cursor: pointer; color: inherit; }
+.lh .tx { flex: 1; min-width: 0; }
+.lh .nm { display: block; font-size: 1.0625rem; font-weight: 700; color: var(--c); line-height: 1.3; }
+.lh .hd { display: block; margin-top: 2px; font-size: .8125rem; color: var(--muted); }
+.lh .mt { flex: none; font-size: .75rem; font-weight: 700; color: var(--muted); text-align: right; line-height: 1.35; }
+.lh::after { content: ''; flex: none; width: 9px; height: 9px; border-right: 2px solid var(--c); border-bottom: 2px solid var(--c); transform: rotate(45deg); transition: transform .3s; margin: 0 4px 3px 2px; }
+.leaf.open .lh::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.lbw { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s cubic-bezier(.3,.9,.3,1); }
+.leaf.open .lbw { grid-template-rows: 1fr; }
+.lbi { min-height: 0; overflow: hidden; }
+.lbc { padding: 2px 16px 16px; border-top: 1px solid var(--line); opacity: 0; transform: translateY(-6px); transition: opacity .35s .1s, transform .35s .1s; }
+.leaf.open .lbc { opacity: 1; transform: none; }
+.lbc p { margin: 10px 0 0; }
+.lbc ul.ls { margin: 8px 0 0; padding-left: 22px; }
+.lbc ul.ls li { padding: 2px 0; }
+.lbc h3 { margin: 18px 0 6px; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
+.mem { list-style: none; margin: 0; padding: 0; }
+.mem li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.mem li:last-child { border-bottom: 0; }
+.mem .u { flex: none; min-width: 112px; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.mem .n { font-weight: 700; }
+.mem .t { font-size: .75rem; font-weight: 700; color: #fff; background: var(--c); border-radius: 999px; padding: 0 9px; }
+.crs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 20px; }
+.crs li { display: flex; gap: 10px; align-items: baseline; padding: 5px 4px; border-bottom: 1px solid var(--line); font-size: .9375rem; border-radius: 4px; }
+.crs .cd { flex: none; width: 64px; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.crs li.hit, .mem li.hit { background: #FFF1B8; animation: flash 2.4s ease; }
+.none { margin: 10px 0 0; font-size: .875rem; color: var(--muted); }
+
+/* the bud on the stem and the branch to it */
+.bud { position: absolute; left: 50%; top: 16px; width: 26px; height: 26px; margin-left: -13px; z-index: 2; transition: transform .45s cubic-bezier(.3,1.6,.5,1); pointer-events: none; }
+.bud path { fill: #fff; stroke: var(--c); stroke-width: 2.2; transition: fill .3s; }
+.leaf.open .bud { transform: rotate(180deg) scale(1.15); opacity: 0; }
+.leaf.open .bud path { fill: var(--c); }
+.leaf::before { content: ''; position: absolute; top: 28px; height: 3px; width: 34px; background: var(--c); border-radius: 2px; transition: opacity .25s; }
+.leaf:nth-child(odd)::before { left: calc(50% - 34px); }
+.leaf:nth-child(even)::before { left: 50%; }
+.leaf.open::before { opacity: 0; }
+@keyframes stem { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes leafin { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes flash { 0%, 55% { background: #FFE27A; } 100% { background: #FFF1B8; } }
+
+.foot { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .875rem; color: var(--muted); }
+.foot a { color: var(--brand-ink); font-weight: 600; }
+
+@media (max-width: 820px) {
+  .vine::before { left: 16px; }
+  .leaf, .leaf:nth-child(even) { justify-content: flex-start; padding-left: 40px; }
+  .card, .leaf.open .card { width: 100%; }
+  .bud { left: 16px; }
+  .leaf:nth-child(odd)::before, .leaf:nth-child(even)::before { left: 16px; width: 24px; }
+  .leaf:nth-child(even) .card { border-radius: 22px 4px 22px 4px; }
+  .leaf.open::before { opacity: 1; }
+  .leaf.open .bud { opacity: 1; }
+  .lh .mt { display: none; }
+  .res .k { width: 70px; }
+}
+@media (max-width: 560px) {
+  .pt text { display: none; }
+  .mem .u { min-width: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .pollen { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="stage">
+    <svg class="flower" id="flower" viewBox="30 4 500 390" role="group" aria-label="Üç bölümü temsil eden çiçek. Bölüm seçmek için aşağıdaki düğmeleri kullanın.">
+      <g class="sway" id="sway"></g>
+    </svg>
+    <div class="pills" id="pills" role="tablist" aria-label="Bölümler"></div>
+    <p class="hint" id="hint">Bir yaprağa dokunarak bölümü seçin; anabilim dalları dal gibi açılır.</p>
+  </div>
+
+  <div class="find">
+    <label class="vh" for="q">Ders, öğretim elemanı veya anabilim dalı ara</label>
+    <input class="srch" id="q" type="search" placeholder="Ders, hoca veya anabilim dalı ara…" autocomplete="off">
+    <p class="cnt" id="cnt" aria-live="polite"></p>
+    <ul class="res" id="res" hidden></ul>
+  </div>
+
+  <section class="dept" id="dept" hidden aria-live="polite"></section>
+
+  <p class="foot">Ders içerikleri ve izlencenin tamamı için:
+    <a href="https://ebp.bozok.edu.tr/DereceProgramlari/Detay/1/166/146/932001" target="_blank" rel="noopener">Ders içerikleri (Bologna bilgi paketi)</a> ·
+    <a href="https://bozok.edu.tr/okul/ilahiyat-fakultesi/sayfa/ders-izlenceleri/13640" target="_blank" rel="noopener">Ders izlenceleri</a>
+  </p>
+</div>
+
+<script>
+/* Content: departmental texts and course lists supplied by the faculty (bozok.edu.tr/okul/ilahiyat-fakultesi).
+   Heads and members follow Yonetim.html. */
+const DATA = [{"id": "its", "ad": "İslam Tarihi ve Sanatları Bölümü", "b": ["Prof. Dr.", "Abdulkadir DÜNDAR"], "y": ["Dr. Öğr. Üyesi", "Dadaş MUTALLİM"], "intro": ["Bozok Üniversitesi İlahiyat Fakültesi İslam Tarihi ve Sanatları Bölümü, 08.01.2020 tarihli ve 75850160-104.01.04.01-E.16402 sayılı YÖK kararıyla açılmıştır.", "İslam Tarihi ve Sanatları Bölümünün amacı İslam dininin doğuşundan günümüze kadar geçirdiği tarih sürecini konu edinmek ve İslam tarihinde meydana gelen belli başlı siyasi, sosyal, kültürel, edebi ve sanatsal olayları incelemektir. Bölüm kapsamındaki ana bilim dallarında, bilimsel araştırma yapabilme yetkinliği kazanmış, alanının sorunlarına vâkıf ve onlara çözümler üretebilen, bilimsel düşünce ve etik kurallarını benimsemiş, akademik konularda sorgulama, geliştirme, üretkenlik, katılımcılık niteliklerine sahip öğrenciler yetiştirmektir.", "Alanın gerektirdiği Arapça ve Osmanlıcanın yanı sıra batı dillerinin de interdisipliner çalışmalarda kullanılmasını desteklemektedir. İslam Tarihi ve Sanatları Bölümünün diğer bir amacı da, İslâm tarihi ve medeniyetini bütün yönleri ile ele alarak, bu çerçevede lisans ve lisansüstü seviyede, bilimsel birikime katkıda bulunmak üzere bilimsel araştırmalar yapmak, bilimsel sonuçlar üretmek ve bunları ilgili taraflarla paylaşmaktır."], "abd": [{"ad": "İslam Tarihi", "b": ["Dr. Öğr. Üyesi", "Dadaş MUTALLİM"], "u": false, "m": [["Prof. Dr.", "İsmail PIRLANTA"], ["Doç. Dr.", "Nilüfer ATEŞ"], ["Arş. Gör.", "Tuğba ŞAHBAZ ALTINSOY"]], "desc": [{"t": "p", "x": "İslâm Tarihi Bölümü, diğer bölüm ve anabilim dallarının İlâhiyat öğrencilerine kazandırmayı amaçladığı bilgi düzeyi ve formasyona paralel olarak, tarihî süreç içerisinde İslâm tarihi ve medeniyetini ele alması bakımından önemli bir fonksiyon üstlenmektedir. İslâm tarihçiliğinin, olayları sadece kronolojik bir tasnif içerisinde ele almak olmadığını, olayları zaman ve mekân şartları içerisinde değerlendirerek, sosyal, kültürel, ekonomik ve siyasî boyutlarını ortaya çıkarmak olduğunu benimsetmek ve bu yönde örnek çalışmalar sunmak amacındadır."}], "courses": [["ILA1210", "Siyer-i Nebi"], ["ILA2317", "İslam Tarihi"], ["ILA3611", "İslam Medeniyet ve Kurumları Tarihi"], ["ILA750", "Tarih Felsefesi"], ["ILA774", "İslam Öncesi Arap Tarihi ve Kültürü"], ["ILA776", "İslam Kurumları Tarihi"], ["ILA777", "İslam Ülkeleri ve Coğrafyası Tarihi"], ["ILA779", "Türk İslam Devletleri Tarihi"], ["ILA781", "Osmanlı Tarihi ve Medeniyeti I"], ["ILA783", "Osmanlı Tarihi ve Medeniyeti II"], ["ILA784", "Türk Kültür Tarihi"], ["ILA785", "Şehir ve Kültür"], ["ILA788", "Osmanlıca Tarihi Metinleri"]]}, {"ad": "Türk İslam Sanatları Tarihi", "b": ["Prof. Dr.", "Abdulkadir DÜNDAR"], "u": false, "m": [["Arş. Gör.", "Emre KARADAVUT"]], "desc": [{"t": "p", "x": "Türk İslam Sanatları Tarihi Bölümü, Türklerin İslâm’ı kabulünden günümüze kadar plastik sanatlar alanında ortaya koydukları eserler, klasik mirasın modern Türk ve dünya sanatı açısından anlamı, Türk-İslâm coğrafyasına yayılmış belli başlı mimarî âbideler, yazı (hüsn-i hat), tezhib, ebrû, cilt vb. tezyinî sanatlar devir ve bölgelere göre kronolojik olarak ele alınmaktadır."}], "courses": [["ILA3513", "İslam Sanatları Tarihi"], ["ILA7035", "Selçuklu Sanatı"], ["ILA7036", "Orta Asya Türk Sanatı"], ["ILA712", "Hüsn-i Hat I"], ["ILA787", "İslam Sanatları ve Estetiği"]]}, {"ad": "Türk Din Musikisi", "b": ["Dr. Öğr. Üyesi", "Hüseyin YÜNER"], "u": false, "m": [], "desc": [{"t": "p", "x": "Mûsikînin özellikle dinî sahadaki etkin rolü, İslâm öncesi ve İslâm sonrası mûsikîmizin Türk Medeniyetindeki rolü, Türklerin mûsikî teorisi ve pratiği açısından ortaya koyduğu kaynak eserler, klasik ve dinî Türk mûsikîsi günümüze ulaşabilmiş örnekler, önde gelen mûsikîşinasların hayat ve sanatları, Türk mûsikîsinin saz ve söz formları incelenmektedir."}], "courses": [["ILA230", "Dini Musiki"], ["ILA773", "Temel Müzik Bilgisi"], ["ILA780", "Türk Din Musikisi Repertuarı"], ["ILA782", "Makamlarla Kur’an-ı Kerim Tilaveti"], ["ILA786", "Türk Din Musikisi Nazariyatı"], ["ILA789", "Türk Musikisi Makamları"], ["ILA792", "Cami Musikisi Uygulamaları"]]}, {"ad": "Türk İslam Edebiyatı", "b": ["Doç. Dr.", "Nilüfer ATEŞ"], "u": false, "m": [], "desc": [{"t": "p", "x": "Türk İslâm Edebiyatı Bölümü, İslâm öncesi Türk Edebiyatı ve dinî muhtevası, İslâmiyet’in kabulünden sonraki Türk Edebiyatının gelişimi ve İslâm dininin bu edebiyata etkilerinin ele alındığı bir disiplindir. Bu çerçevede Türk Edebiyatı içindeki dinî-tasavvufî muhteva ve ilgili dinî-edebî türler incelenmekte, ilgili örnek metinler; günümüz Türkçesine çevirme, şerh ve tahlîl gibi yöntemlerle analiz edilmektedir. Türk-İslâm Edebiyatı; “din-edebiyat, tasavvuf-edebiyat, Türk-İslâm edebiyatı tarihi, kaynaklar, şahıslar-eserler, metin incelemesi ve şerh çalışmaları” gibi temel alanlar üzerinde yoğunlaşmaktadır."}], "courses": [["ILA2318", "Osmanlı Türkçesi"], ["ILA4731", "Türk İslam Edebiyatı"]]}]}, {"id": "tib", "ad": "Temel İslam Bilimleri Bölümü", "b": ["Prof. Dr.", "Mehmet TÖZLUYURT"], "y": ["Doç. Dr.", "Halil ÖZTÜRK"], "intro": ["Bozok Üniversitesi İlahiyat Fakültesi Temel İslam Bilimleri Bölümü, 08.08.2011 tarih ve B.30.0.EÖB.101.03.01-5120-033350 sayılı YÖK kararıyla açılmıştır.", "Temel İslam Bilimleri Bölümü, İslam Dininin doğru bir şekilde anlaşılmasına yönelik olarak İslam’ın inanç, ibadet, hukuk, ahlak, tasavvuf alanlarında bilimsel araştırmalar yaparak İslam ilim ve kültür mirasını akademik bir anlayışla ve temel kaynaklar olan Kur’an ve Hadis başta olmak üzere ana kaynaklara dayalı olarak inceler. Günümüz gelişmeleriyle ortaya çıkan güncel dini sorunlara yeni bilgi ve teknolojik gelişmelerden de yararlanarak çözümler üretmeye çalışır."], "abd": [{"ad": "Tefsir", "b": ["Doç. Dr.", "Ali BİNOL"], "u": false, "m": [["Prof. Dr.", "Talip ÖZDEŞ"], ["Dr. Öğr. Üyesi", "Tuğba YILDIRIM"], ["Dr. Öğr. Üyesi", "Talha ERDEM"], ["Öğr. Gör.", "İbrahim KILINÇER"]], "desc": [{"t": "p", "x": "Tefsir, İslam dininin temel kaynağı olan Kur’an-ı Kerîm’in tarihini, bu kaynağın değişik açılardan incelenmesi sonucunda ortaya çıkan ve “Kur’an ilimleri” ana başlığı altında toplanabilecek literatürü, Kur’an’ın daha iyi anlaşılıp yorumlanmasının usul ve metotlarını, tarih boyunca oluşan tefsir birikimini analitik bir yaklaşımla ele alan anabilim dalıdır. Bu anabilim dalının dersleri, Kur’an imlâsının geçirdiği tarihî süreci, Kur’an’ı teori ve pratik olarak doğru okumanın esaslarını, onu sağlıklı bir şekilde yorumlamanın ilkelerini, Kur’an’ın ele aldığı ana konuları, Müslüman toplumlarda tefsir ilminin oluşum ve gelişim tarihini, bu süreç boyunca oluşan eserleri, tefsir ilminin çağdaş yöntem ve problemlerini, ayrıca günümüz İslam dünyasında ve oryantalist bilim çevrelerinde gerçekleştirilen belli başlı Kur’an araştırmalarını incelemeyi hedefler."}], "courses": [["ILA1110", "Kur’an İlimleri ve Tefsir Usulü (Arapça)"], ["ILA2416", "Tefsir I (Arapça)"], ["ILA3512", "Tefsir II (Arapça)"], ["ILA7011", "Tefsir Tarihi"], ["ILA7012", "Tefsir Çeşitleri"], ["ILA7024", "Kur’an Meali Teknikleri I"], ["ILA7025", "Kur’an Meali Teknikleri II"], ["ILA7026", "Mukayeseli Kur’an Meali"], ["ILA7027", "Kur’an’ı Anlama ve Yorumlama"], ["ILA7028", "Kur’an Tefsirinde Farklı Yorumlar"], ["ILA7029", "Tefsir Literatürü"], ["ILA7030", "Şia Tefsiri"], ["ILA7031", "Osmanlıca Tefsir Metinleri I"], ["ILA7032", "Osmanlıca Tefsir Metinleri II"], ["ILA717", "Kur’an’a Çağdaş Yaklaşımlar"], ["ILA720", "İşari Tefsir Metinleri"], ["ILA723", "Çağdaş Tefsir Metinleri"], ["ILA727", "Günümüz Tefsir Problemleri"], ["ILA733", "Klasik Tefsir Metinleri"], ["ILA737", "Kur’an’ın Ana Konuları"], ["ILA740", "Ahkam Ayetleri Tefsiri"]]}, {"ad": "Hadis", "b": ["Doç. Dr.", "Yusuf AKGÜL"], "u": false, "m": [["Arş. Gör. Dr.", "Safiye İNCEYILMAZ MSLM"], ["Arş. Gör. Dr.", "Murat ÖKTEM"]], "desc": [{"t": "p", "x": "Hadis, İslam dininin Kur’an-ı Kerim’den sonra ikinci temel kaynağı olan sünnetin yazılı bilgi ve belgelerini teşkil eden hadis metinlerini, geçirdiği tarihî süreci de dikkate alarak, hadis usûlü kuralları çerçevesinde sened, metin ve muhteva açısından tetkik eden ve bunların güncel yorumlarını yapmaya çalışan anabilim dalıdır. Birey ve toplum olarak Müslümanların pratik hayatta ihtiyaç duyacakları düşünce ve davranış örneklerini sahih sünnet verilerine dayandırmak üzere, Hz. Peygamber’in söz, fiil ve onaylarından oluşan hadis metinlerini, bu alanın bilimsel amaç, araç ve yöntemlerini kullanarak, tam özgünlüğü ile ortaya koymayı hedefler."}], "courses": [["ILA129", "Hadis İlimleri ve Usulü (Arapça)"], ["ILA2316", "Hadis I (Arapça)"], ["ILA3613", "Hadis II (Arapça)"], ["ILA701", "Ahlak ve Adab Hadisleri"], ["ILA716", "Hadis Araştırma Teknikleri"], ["ILA721", "Hadis ve Sünnette Çağdaş Yorumlar"], ["ILA735", "Günümüz Hadis Problemleri"], ["ILA743", "Hadis Tenkidi"]]}, {"ad": "İslam Hukuku", "b": ["Doç. Dr.", "Sezai BEKDEMİR"], "u": false, "m": [["Prof. Dr.", "Hakkı AYDIN"], ["Arş. Gör.", "Yeter ÖZDEMİR"]], "desc": [{"t": "p", "x": "İslâm Hukuku, dinin pratik hayata ilişkin hükümlerini belirli delillere ve kaynaklara dayanarak ortaya koyan ve böylece ferdin dinî hak ve yükümlülüklerini bilmesini sağlayan bir bilimdir. İslâm Hukuku temelde ilahî vahye dayanmakla birlikte oluşumunda insanî unsurlara da (içtihatlar, kamu yararı, adetler vb.) yer vermiştir. İslâm Hukuku aynı zamanda İslâm’ın itikadi, vicdanî, metafizik yönlerinin dışında kalan nesnel kurallarını saptamayı hedefleyen bir bilimdir. Bu nesnel kuralların hemen hepsi doğrudan ya da dolaylı olarak insanların canlarının, akıllarının, dinî inançlarının, mallarının ve namuslarının korunmasını amaçladığı gibi insan hakları, hürriyet, eşitlik, adalet gibi hukukun değişmeyen genel ilkelerini, kuram ve uygulama bazında ön plana çıkarmaya çalışır."}, {"t": "p", "x": "İslâm Hukuku belirli bir milletin kültürünün bir parçası olmadığı için zamanla birçok millet tarafından benimsendiği gibi Türkler tarafından da benimsenmiştir. Türkler, asırlar boyu İslâm Hukuku’nu uygulamışlar ve ondan her yönüyle etkilenmişlerdir. İslâm Hukuku’nun Türkler tarafından uzun süre uygulanması, Türk kültür ve medeniyet tarihinin daha doğru ve gerçekçi şekilde anlaşılması için İslâm Hukuku alanında akademik düzeyde araştırmalar yapılması ihtiyacını doğurmaktadır."}], "courses": [["ILA119", "İslam İbadet Esasları (Arapça)"], ["ILA2415", "Fıkıh Usulü"], ["ILA4730", "Fıkıh I"], ["ILA4810", "Fıkıh II"], ["ILA710", "İbadetler ile İlgili Fıkıh Problemleri"], ["ILA714", "İslamda Helaller ve Haramlar"], ["ILA715", "İslam Hukuk Tarihi"], ["ILA725", "İslam Fıkhında İçtihat ve Taklit"], ["ILA726", "İslam Fıkhında Külli Kaideler"], ["ILA730", "Fıkıh Metinleri"], ["ILA734", "Mukayeseli İslam Fıkhı"], ["ILA736", "İslam Ticaret Hukuku"], ["ILA738", "Ahkam Ayetlerinin Fıkhi Analizi"], ["ILA741", "Ahkam Hadislerinin Fıkhi Analizi"], ["ILA742", "Günümüz Fıkıh Problemleri"]]}, {"ad": "Kelam", "b": ["Prof. Dr.", "Mehmet TÖZLUYURT"], "u": false, "m": [["Doç. Dr.", "Halil ÖZTÜRK"], ["Arş. Gör.", "Muhammed MAZLUM"]], "desc": [{"t": "p", "x": "Kelam; en üstün Varlık’ı yani Allah’ı, varlık bakımından özüne ait niteliklerini ve kendi dışındaki varlıklarla ilişkisini konu edinen bir ilimdir. Bu yapısıyla Kelâm, İslam vahyi ile ortaya çıkan teolojik gerçeklikte Kur’an’da tevhid kavramı ile ifade edilen inanç anlayışını ve İslam’ın “Ulûhiyet”, “Nübüvvet” ve “Meâd” olarak sistematize edilen diğer inanç konularını rasyonel olarak temellendirme çabalarını ifade eder."}], "courses": [["ILA113", "İslam İnanç Esasları"], ["ILA2413", "Kelam Tarihi"], ["ILA3514", "Kelam"], ["ILA3612", "Sistematik Kelam"], ["ILA7013", "Türk Kelamcıları"], ["ILA7014", "Kelamda Yenilik Hareketleri"], ["ILA707", "Klasik Kelam Metinleri"], ["ILA718", "Kelam Tarihi Metinleri"], ["ILA732", "Günümüz Kelam Problemleri"]]}, {"ad": "İslam Mezhepleri Tarihi", "b": ["Doç. Dr.", "Halil ÖZTÜRK"], "u": false, "m": [], "desc": [{"t": "p", "x": "Müslümanların itikadi ve amelî konularda takip ettikleri yol şeklinde açıklayabileceğimiz mezhep, belirli bir sistem dâhilinde Müslümanların inanç ve uygulamalarının düzenli ve etkili bir şekilde hayata geçirilmesinde önemli vazifeler yerine getirmiştir. Asr-ı saadetten sonra meydana gelen gelişmeler, sosyal ve kültürel bir takım sebeplerin de etkisiyle Müslümanların inanç ve amellerinin doğru ve düzenli bir şekilde öğrenilip, yaşanması ihtiyacı, mezheplerin teşekkülünde etkili olmuştur."}, {"t": "p", "x": "İslam Mezhepleri Tarihi bu süreçte mezheplerin esaslarının oluşmasına etki eden düşünce ve hareketleri inceleyerek toplum nazarında kabul görmüş veya itibar edilmemiş fikirlerin araştırılıp öğretilmesini konu edinerek Müslümanları farklı inançları konusunda bilgilendirmeyi hedef edinmiştir. İslam Mezhepleri Tarihi, Müslümanların sahip oldukları farklı itikatlar konusunda geçmişte yaşanan sıkıntıların sebeplerine ışık tutarak, yersiz ihtilaf ve düşmanlıkların tehlikesine dikkat çeker. Bu itibarla İslam Mezhepleri Tarihi sadece geçmişteki inanç farklılıklarını değil, günümüzdeki inanç ve düşünce hareketlerini de inceler."}], "courses": [["ILA724", "Mezhepler Tarihi Metinleri"], ["ILA739", "Klasik Mezhepler Tarihi Metinleri"], ["ILA744", "Çağdaş İslam Akımları"], ["ILA473", "İslam Mezhepleri Tarihi"]]}, {"ad": "Tasavvuf", "b": ["Dr. Öğr. Üyesi", "Edibe BOYRAZ"], "u": false, "m": [["Arş. Gör.", "Hümeyra ÖZTÜRK"]], "desc": [{"t": "p", "x": "Tasavvuf, klasik literatürü büyük ölçüde hicrî III. ve IV. yüzyıllarda tamamlanmış ve alanı İslâm ahlâkı ve dindarlığı olarak temeyyüz etmiş temel İslâm ilimlerinden biridir. Bu anabilim dalı çatısı altında tasavvufun gelişim aşamaları; İslam düşüncesi içerisindeki yeri ve diğer bilimlerle ilişkisi; belli başlı klasik ve modern literatür; Sufilerin İslâm düşüncesine yaptığı katkılar; sosyal hayatın unsurları olarak tekke ve zaviyeler; erken dönemden itibaren yayılmaya başlamış tarikatlar ve günümüzdeki durumları gibi konular ele alınmaktadır."}, {"t": "p", "x": "Tasavvuf Tarihi, Türk kültürünün bir parçası olan tasavvufî akımları tarihî açıdan ele alarak inceler. Özellikle bu alan, kültürümüzün temel taşları sayılan Mevlanâ, Yûnus Emre, Hacı Bektaş-ı Velî gibi tüm insanlığa yön veren mutasavvıfların evrensel düşüncelerini günümüz insanına takdim etmektedir. Çağdaş insanın hemen her zaman ihtiyaç duyduğu adı geçen mutasavvıfların da ele aldığı barış, sevgi, kardeşlik, hoşgörü gibi temalar işlenmekte ve ülkemiz insanının dinî hayatına yansıtılmasına çalışılmaktadır. Diğer taraftan dinî hayatın deruni yönünü oluşturan tasavvuf hakkında ilmî-akademik düzeyde araştırmalar yapılmakta ve insanımızın dinin temel değerleriyle çelişen durumlara düşmemesi için yayınlar çıkarılmaktadır. Ayrıca bu anabilim dalında Türk kültürünün bütün alanlarında etkili olmuş, düşünce hayatımızı hemen her alanda etkilemiş tasavvuf olgusunun, tarihî süreç içinde geçirdiği evreler irdelenmekte ve günümüz açısından değerlendirilmektedir. Bu anabilim dalında yapılan çalışmalar genç ilâhiyatçılara anlatılarak onların dini ve din kültürünü doğru öğrenip sağlıklı sentezlere ulaşmalarına katkıda bulunmaktadır."}], "courses": [["ILA3614", "Tasavvuf"], ["ILA7017", "Tasavvufta Karakter Eğitimi"], ["ILA7018", "Günümüz Tasavvuf Akımları"], ["ILA7019", "Tasavvuf Psikolojisi"], ["ILA7020", "Tasavvuf Sosyolojisi"], ["ILA7021", "Osmanlı Tasavvuf Kültürü"], ["ILA745", "Tasavvuf Metafiziği"]]}, {"ad": "Arap Dili ve Belagatı", "b": ["Prof. Dr.", "Gülhan TÜRK"], "u": false, "m": [["Öğr. Gör. Dr.", "Nevriye Sümeyra ÇALIK"], ["Dr. Öğr. Üyesi", "Yunus ÇAKIR"], ["Öğr. Gör.", "Anas MSLM"], ["Öğr. Gör. Dr.", "Adem YENER"], ["Öğr. Gör.", "Münevver BAYRAM"], ["Öğr. Gör.", "Habip UZ"], ["Arş. Gör.", "Alper ÇIRPAN"]], "desc": [{"t": "p", "x": "Arap Dili ve Belagati Anabilim Dalı’nın amacı, Arap Dilini ve belagat özelliklerini inceleyerek öğretmek; Arap dünyasının tarihi, kültürü ve edebî birikimi hakkında bilgili; Arap dünyasındaki edebî, siyasî, toplumsal ve ekonomik gelişmeleri yazılı ve işitsel kaynaklardan takip edebilecek, düşündüğünü yazılı ve sözlü yolla ifade edebilecek dil becerisine sahip öğrenciler yetiştirmektir."}, {"t": "p", "x": "Arap Dili ve Belagati Anabilim Dalı’nda başlıca Arapça Dilbilgisi, Arap Edebiyatı Tarihi, Arapçadan Türkçeye, Türkçeden Arapçaya Çeviri konularında dersler verilmektedir. Arap Edebiyatının çeşitli dönemlerine ait şiir ve nesir örnekleri ele alınmakta, kompozisyon yazma denemeleri yaptırılmakta, ayrıca öğrenciye konuşma alışkanlığı kazandırılmaya çalışılmaktadır. Klasik metinlerin yanı sıra çeşitli konularda modern Arapça metinler çevrilmekte, öğrenciye Arapça terimler ve deyimler öğretilmektedir."}], "courses": [["ILA112", "Arap Dili ve Edebiyatı I (Arapça)"], ["ILA122", "Arap Dili ve Edebiyatı II (Arapça)"], ["ILA2311", "Arap Dili ve Belağatı III"], ["ILA2411", "Arap Dili ve Belağatı IV"], ["ILA7033", "Arapça Lehçeleri I"], ["ILA7034", "Arapça Lehçeleri II"], ["ILA709", "Basın Arapçası I"], ["ILA719", "Basın Arapçası II"], ["ILA722", "Arapça Modern Metinler I"], ["ILA731", "Arapça Modern Metinler II"]]}, {"ad": "Kur’an-ı Kerim Okuma ve Kıraat İlmi", "b": ["Öğr. Gör.", "Yasin BEDİR"], "u": false, "m": [["Öğr. Gör.", "Yasin CENAN"], ["Öğr. Gör.", "Mehmet ÖZÜDOĞRU"]], "desc": [{"t": "p", "x": "Bu anabilim dalında öğrencinin Kur’an-ı Kerim’i kurallarına uygun bir biçimde okuması için; Kur’an kelimeleri üzerindeki farklı okuyuşları konu alan Kıraat ilmi ve farklı kıraatleri tanıması, Kur’an harflerinin fonetiği ile ilgili teorik bilgileri ve Kur’an’ı en güzel şekilde okumanın kuralları olan “Tecvid” bilgisini edinmesi ve bununla birlikte günlük hayatta ve mesleki deneyiminde gerekli olan bazı sureleri ezberlemesi, Kur’an’ın içeriği ve konu dağılımı ile ilgili temel bilgileri kavraması amaçlanır."}, {"t": "p", "x": "Kıraat ilmi, Kur’an etrafında gelişen ilimlerin başında gelmektedir. Kur’an-ı Kerim kelimelerinin okunuş biçimlerini konu edinen ve tilavet farklılıklarının sınırlarını belirleyen bu ilim, keyfi ve yanlış okunuşları engeller. Hz. Peygamber’e kadar varan sahih senedi olan, Hz. Osman tarafından çoğaltılan Mushaf yazısına uyan ve Arap dilbilim kaidelerine ters düşmeyen kıraat vecihleri geçerli kıraat kabul edilir. Mütevâtir olan bütün kıraat vecihleri Kur’an’ın kendisidir. Bu şartlardan birinde halel varsa o kırâat vechi için Kur’an’ın kendisidir denilemez. Kur’an kıraatının muhtelif şekillerini konu edinen kıraat ilminin amacı ise, kıraat ihtilaflarının sınırlarını belli bir disiplinin sistematiğiyle belirlemek, muhtelif vecihleri, belli ilkeler çerçevesinde zabt u rabt altına almak ve Allah’ın kelamını tahrif-tağyirden korumak ve Kur’an etrafında gelişen birçok bilim dalına kaynaklık etmektir."}], "courses": [["ILA111", "Kur’an Okuma ve Tecvid I (Arapça)"], ["ILA121", "Kur’an Okuma ve Tecvid II (Arapça)"], ["ILA2310", "Kur’an Okuma ve Tecvid III (Arapça)"], ["ILA2410", "Kur’an Okuma ve Tecvid IV (Arapça)"], ["ILA359", "Kur’an Okuma ve Tecvid V (Arapça)"], ["ILA369", "Kur’an Okuma ve Tecvid VI (Arapça)"], ["ILA7022", "Kur’an Metni Okuma I"], ["ILA7023", "Kur’an Metni Okuma II"], ["ILA708", "Güzel Kur’an Okuma"], ["ILA711", "Kur’an Meali"], ["ILA782", "Makamlarla Kur’an-ı Kerim Tilaveti"]]}]}, {"id": "fdb", "ad": "Felsefe ve Din Bilimleri Bölümü", "b": ["Prof. Dr.", "Ömer DEMİR"], "y": ["Doç. Dr.", "Selahattin YAKUT"], "intro": ["Dinle ilgili olarak tarihte ve günümüzde ortaya çıkan farklı düşünceleri, din-akıl, din-birey, din-toplum, din-bilim, din-felsefe bazında düşüncelerin günümüz insanında ve toplumuna ve çağdaş düşünce hareketlerine yansımaları, dini bilginin mahiyeti, din ve inancın insan davranışlarına etkisi, din eğitiminin tarihi ve güncel dil ve anlayış ile sunumu, geçmiş ve günümüzdeki dinlerin ve inançların tanıtımı günümüz din anlayışlarına etkisi, doğru düşünmenin ilke ve kuralları, din öğretimine özel ilke/yöntem ve tekniklerin öğretimi, dini rehberlik ve danışmanlık hizmetlerinin kalitesi, öğretmenlik mesleği, öğretmen adaylarının etkili bir şekilde yetiştirilmesi gibi konuları araştırır.", "Bölümde okutulan dersler, öğrencilere zengin bir düşünce dünyası, bireysel ve toplumsal sorunlarda sorumluluk alma, bilgiye çok yönlü bakış, tarihsel ve güncel yaklaşımlara eleştirel gözle okuyabilme, bilimsel alanlara teknolojiye ve evrensel değerlere açık bir anlayış, kanıtlara dayalı bir dünya görüşü ve din anlayışı oluşturma, ülkemizde ve dünyada meydana gelen olayları ilmin ve irfanın gözü ile okuma ve değerlendirme, kendi düşüncelerini ve bilgi birikimini yazılı ve sözlü olarak akademik bir üslupla ifade edebilme, alanında özgün bilimsel araştırma yapma gibi nitelikleri öğrencilerine kazandırmayı amaçlar. Yüksek lisans programlarında da söz konusu beceri ve araştırmalar disiplinlerarası bir yaklaşımla yürütülür."], "abd": [{"ad": "İslam Felsefesi", "b": ["Prof. Dr.", "Ömer DEMİR"], "u": true, "m": [["Dr. Öğr. Üyesi", "Hatice GÖKTAŞ"]], "desc": [{"t": "p", "x": "İslam Felsefesi Anabilim Dalı, İslam düşünce geleneği içinde ortaya çıkan felsefî yaklaşımları tarihsel, kavramsal ve sistematik boyutlarıyla inceleyen bir disiplindir. Bu alan, özellikle İslam dünyasında VIII. yüzyıldan itibaren gelişen rasyonel düşünce akımlarını; varlık, bilgi, ahlak, siyaset, din-akıl ilişkisi ve insan anlayışı gibi temel felsefî problemler çerçevesinde ele alır. Anabilim dalı, yalnızca klasik dönem filozoflarının görüşlerini öğretmekle kalmaz; aynı zamanda bu düşüncelerin günümüz meseleleriyle nasıl ilişkilendirilebileceğine dair eleştirel bir bakış açısı da kazandırmayı amaçlar. Bu kapsamda İslam felsefesi geleneği ile modern felsefe, bilim ve ahlak anlayışları arasında bağlar kurulur. Böylece öğrenciler hem geleneksel birikimi kavrayan hem de günümüz dünyasına anlamlı katkılar sunabilecek bir düşünsel donanıma sahip olurlar."}, {"t": "p", "x": "İslam felsefesi dersleri kapsamında öğrenciler, Kindî, Fârâbî, İbn Sînâ, Gazzâlî, İbn Rüşd, Sühreverdî, İbn Tufeyl, İbn Haldun ve Molla Sadrâ gibi önemli filozofların fikirlerini ve bu fikirlerin İslam düşüncesi içindeki etkilerini analiz etme becerisi kazanırlar. Aynı zamanda İslam felsefesinin Antik Yunan, Hint, Hristiyan ve Yahudi felsefeleriyle olan etkileşimi ve bu etkileşimlerden doğan özgün sentezler de sistemli bir şekilde değerlendirilir. Nitekim İslam felsefesinin doğuşunda Grek, Hint ve İran kaynaklı eserlerin Arapçaya çevrilmesini sağlayan tercüme hareketleri, bu düşünce geleneğinin temellerini atan entelektüel ortamı hazırlamıştır. Ayrıca İslam felsefesi hem kelam hem de tasavvufla etkileşim içinde gelişmiş; özellikle varlık, bilgi ve insan anlayışı gibi temel meselelerde bu iki disiplinle ortak sorulara farklı yaklaşımlar sunmuştur. Kelamcılarla felsefeciler arasında yürütülen tartışmalar, aklî delillendirme yöntemlerinin İslam düşüncesinde kökleşmesine katkı sağlamıştır. Tasavvufî düşünceyle ise özellikle İşrâkîlik ve irfan gelenekleri aracılığıyla metafiziksel ve sezgisel boyutta derin bağlar kurulmuştur. Dolayısıyla İslam felsefesi anabilim dalı, disiplinler arası ve metin merkezli bir yaklaşımla öğrencilerin klasik felsefî eserleri okuyup anlamalarını teşvik eder; bu da onları entelektüel düzeyde yetkin bireyler hâline getirir."}, {"t": "p", "x": "İslam Felsefesi Anabilim Dalı programı içerisinde yer alan İslam Ahlak Esasları dersi, birey ve toplum hayatında ahlaki ilke ve değerlerin İslam düşüncesi bağlamında nasıl temellendirildiğini incelemeyi amaçlar. Ders kapsamında, Kur’an ve Sünnet’te yer alan temel ahlaki prensipler ile klasik ve modern dönem İslam âlimlerinin ahlak anlayışları ele alınır. Ahlakın kaynağı, amacı, insanın irade ve sorumluluğu gibi konular, felsefî ve kelamî yaklaşımlar ışığında değerlendirilir. Öğrencilerin bireysel ve toplumsal düzeyde ahlaki farkındalık geliştirmesi hedeflenir. Yozgat Bozok Üniversitesi İlahiyat Fakültesi’nde İslam Felsefesi Anabilim Dalı, sahip olduğu teorik birikimiyle eleştirel düşünmeyi teşvik eden, kültürel ve felsefî mirasın sürdürülebilirliğini önemseyen bir anlayışla eğitim-öğretim faaliyetlerini sürdürmektedir."}], "courses": [["", "İslam Felsefesi Tarihi"], ["", "İslam Ahlak Esasları ve Felsefesi"]]}, {"ad": "Felsefe Tarihi", "b": ["Dr. Öğr. Üyesi", "Yasin GÖKHAN"], "u": false, "m": [], "desc": [{"t": "p", "x": "Felsefe Tarihi, insanlık tarihinin çeşitli dönemlerinde ortaya çıkan felsefi düşünce sistemlerini, bu düşüncelerin doğduğu tarihsel, kültürel ve toplumsal bağlamı dikkate alarak inceler. Bu bilim dalı, felsefi problemleri kronolojik, eleştirel ve analitik bir bakışla yorumlayarak düşünce tarihini sistematize eder."}, {"t": "p", "x": "Felsefe Tarihi kronolojik olarak şu dönemleri kapsar:"}, {"t": "ul", "x": ["Antik Yunan Felsefesi (Sokrates Öncesi Doğa Filozofları, Sokrates, Platon, Aristoteles)", "Helenistik ve Roma Dönemi Felsefesi (Epikurosçuluk, Stoacılık, Septisizm)", "Orta Çağ Felsefesi (İslam, Hristiyan ve Yahudi Felsefesi)", "Rönesans ve Reform Dönemi", "Modern Felsefe (Descartes’tan Kant’a)", "Çağdaş Felsefe (19. ve 20. Yüzyıl Düşünce Akımları)", "Güncel Felsefi Hareketler (Analitik Felsefe, Kıta Felsefesi, Postmodernizm)"]}, {"t": "p", "x": "Felsefe Tarihi, yalnızca felsefi düşüncelerin kronolojisini sunmakla kalmaz; aynı zamanda bu düşünceler arasındaki etkileşimleri, devamlılıkları ve kırılmaları analiz eder. Eleştirel okuma, felsefi argüman çözümlemesi ve metin merkezli yorumlar, bu alanın temel yöntemleridir."}, {"t": "p", "x": "Felsefe Tarihini bilmek, günümüz felsefi sorunlarını daha derinlemesine kavrayabilmeyi sağlar. Felsefi problemler zamana özgü olmakla birlikte, çoğu zaman tarihsel bağlamlarda tekrar eder. Dolayısıyla bu alan, felsefenin sürekliliğini ve dönüşümünü anlamada kilit rol oynar. Felsefe tarihçisi, bir filozofun düşüncesini yalnızca aktarmakla yetinmez; o düşüncenin oluştuğu bağlamı, gerekçelerini, etkilerini ve eleştirilerini değerlendirerek derinleştirir. Aynı zamanda çağdaş felsefi sorunların kökenini tarihte arayarak, günümüz tartışmalarına katkı sunar."}, {"t": "p", "x": "Felsefe Tarihi; felsefenin sistematik konularıyla ilişkili olarak metafizik, epistemoloji, etik, mantık, semantik, din felsefesi, bilim felsefesi, zihin felsefesi, tarih felsefesi, siyaset felsefesi gibi alanlarla yakın ilişkidedir. Bunun yanı sıra tarih bilimi, edebiyat tarihi, siyaset bilimi, sosyoloji ve teoloji gibi alanlarla da etkileşim halindedir. Özellikle kültürel tarih, entelektüel tarih ve bilim tarihi ile güçlü bağlara sahiptir. Ayrıca felsefe tarihçileri, modern çağda Kıta Avrupası Felsefesi (özellikle Hegel, Nietzsche, Heidegger) ile Analitik Felsefe (Frege, Russell, Wittgenstein) gelenekleri arasındaki ayrımı da araştırma konusu yapmaktadır."}], "courses": [["ILA3615", "Felsefe Tarihi"], ["ILA749", "Kritik Analitik Düşünce"], ["ILA750", "Tarih Felsefesi"]]}, {"ad": "Mantık", "b": ["Dr. Öğr. Üyesi", "İhsan Övge ÖZTÜRK"], "u": false, "m": [], "desc": [{"t": "p", "x": "En genel tanımıyla mantık, düşünme biçimlerini ve felsefi, bilimsel veya matematiksel çıkarımların geçerlilik koşullarını inceleyen bir disiplindir. Mantık, çeşitli ekoller tarafından farklı şekilde ele alınır. Aristoteles ile ortaya çıkan klasik mantık, kıyaslar ve önerme mantığı aracılığıyla doğru akıl yürütmenin ilkelerini sistematize ederken felsefi mantık anlam, doğruluk, zorunluluk, olasılık ve zaman gibi kavramların çözümlemesine odaklanır; aynı zamanda doğal dillerdeki argümanları analiz ederek dil ile düşüncenin ilişkisini sorgular. Matematiksel mantık ise bu kavramları biçimsel sistemlere dönüştürerek anlambilime odaklanan model teorisi, sözdizime odaklanan kanıt teorisi ve mantık ile matematik arasında köprü kuran cebirsel mantık gibi alt alanlarda çalışır."}, {"t": "p", "x": "Bu çok yönlü yapısıyla mantık, yalnızca felsefenin en eski dallarından biri olmakla kalmaz; aynı zamanda çağdaş matematik, bilgisayar bilimi, yapay zekâ, dilbilim ve etik gibi alanlarda da temel bir rol oynar. Mantık, teoloji ve din çalışmaları bağlamında metinlerin yorumlanmasında, argümanların tutarlılığını sınamada ve teolojik akıl yürütmenin yapısını çözümlemede önemli bir araçtır. Hukukta ise mantık, normların ve hukuksal akıl yürütmenin biçimsel analizinde kullanılır. Böylece mantık, disiplinler arası bir yetkinlik kazandırarak eleştirel düşünme, kavramsal açıklık ve sistematik analiz becerilerini geliştirir."}], "courses": [["ILA128", "Mantık"]]}, {"ad": "Din Felsefesi", "b": ["Dr. Öğr. Üyesi", "Münteha BEKİ"], "u": false, "m": [["Dr. Öğr. Üyesi", "Yasin GÖKHAN"], ["Arş. Gör. Dr.", "Esma AYGÜN YAKIN"]], "desc": [{"t": "p", "x": "Din Felsefesi, dinin doğası, içeriği, hakikati ve insan yaşamındaki rolü üzerine felsefi düşünmenin sistemli ve eleştirel biçimde ele alındığı bir felsefe disiplinidir. Dinin temel kavramları olan Tanrı, vahiy, iman, mucize, ahiret, dua, kötülük problemi gibi olgular, bu disiplinin sorguladığı başlıca konular arasında yer alır. Din Felsefesi, dini inançların rasyonelliğini, mantıksal tutarlılığını ve epistemolojik statüsünü tartışmaya açarak hem teistik hem de teistik olmayan perspektiflerden hareketle analitik ve eleştirel düşünceyi geliştirir."}, {"t": "p", "x": "Din Felsefesinin temel problemleri arasında felsefe ve din ilişkisi; Tanrı’nın varlığı ve temellendirilmesi; Tanrı’nın sıfatları ve birbiriyle olan tutarlılığı; dini inançların rasyonel olup olmadığı; kötülük probleminin Tanrı’nın varlığıyla bağdaştırılıp bağdaştırılamayacağı; din ile bilim arasında nasıl bir ilişki kurulabileceği; din ve ahlak ilişkisi bağlamında ahlakın kaynağı ve mahiyeti; vahyin imkânı, mahiyeti ve epistemolojik statüsü, dini çeşitlilik gibi konular yer almaktadır."}, {"t": "p", "x": "Din Felsefesinin kökleri Antik Yunan’a kadar uzanır. Sokrates, Platon ve Aristoteles’in Tanrı ve ruh üzerine düşünceleri bu alana öncülük etmiştir. Orta Çağ’da Hristiyan, İslam ve Yahudi filozofları (örneğin Augustinus, Aquinas, İbn Sina, Gazali, Mûsâ b. Meymûn) teolojik konularda farklı düşünceler öne sürdükleri gibi Tanrı’nın varlığına dair deliller geliştirmişlerdir. Modern dönemde Descartes, Leibniz, Hume ve Kant gibi düşünürler, dini inançları akıl süzgecinden geçirmiştir. 20. ve 21. yüzyılda ise Alvin Plantinga, Richard Swinburne, William Rowe, John Hick gibi düşünürler Din Felsefesini analitik temelde yeniden şekillendirmiştir. Günümüzde analitik din felsefesi, özellikle yirminci yüzyılın ortalarından itibaren gelişerek, dilsel analiz, mantıksal yapı ve argümantasyon gücüne dayanan bir metodoloji geliştirmiştir."}, {"t": "p", "x": "Din Felsefesi, ele aldığı problemler itibariyle metafizik, epistemoloji, etik, mantık, semantik, zihin felsefesi, bilim felsefesi gibi felsefenin diğer alt disiplinlerinden beslenir. Bunun yanı sıra kelam, dinler tarihi, din psikolojisi, din sosyolojisi gibi alanlarla da sıkı ilişki içindedir. Din Felsefesi, ilahiyat bilimleriyle karşılaştırıldığında daha evrensel, sorgulayıcı ve eleştirel bir bakış açısına sahiptir."}], "courses": [["ILA489", "Din Felsefesi"], ["ILA702", "Felsefenin Temel Disiplinleri"], ["ILA703", "Çağdaş Felsefe Akımları"], ["ILA755", "Çağdaş Ahlak Problemleri"]]}, {"ad": "Din Psikolojisi", "b": ["Doç. Dr.", "Selahattin YAKUT"], "u": false, "m": [["Arş. Gör. Dr.", "Rahime Eymen BAKIR"]], "desc": [{"t": "p", "x": "Din Psikolojisi Anabilim Dalı, bireyin dini yaşantılarını, inanç, ibadet ve dini tutum gibi olguların psikolojik boyutlarını bilimsel yöntemlerle inceleyen disiplinler arası bir alandır. Bu alan, dinî yaşantının bireyde oluşturduğu etkileri, gelişimsel süreçlerdeki yansımalarını ve dinin bireyin kişilik, davranış ve zihinsel süreçleri üzerindeki rolünü anlamayı amaçlar."}, {"t": "p", "x": "Din psikolojisi, dini tutumların oluşumunu, değişimini, dini tecrübenin mahiyetini, dini inançların bireysel ve toplumsal işlevlerini psikoloji biliminin kavram ve yöntemleriyle analiz eder. Aynı zamanda bireylerin yaşadıkları dini krizler, dini bağlanma, dini başa çıkma, dua, mistik tecrübeler, dini kimlik gibi olgular üzerine odaklanır. Bu çerçevede, hem klasik psikolojik yaklaşımlar (psikanalitik, davranışçı, bilişsel vb.) hem de çağdaş psikoloji kuramları ışığında dinî yaşantıların çok boyutlu analizi yapılır."}, {"t": "p", "x": "Anabilim dalı, öğrencilere bireyin inanç sistemi ile psikolojik yapısı arasındaki etkileşimi anlama, dini yaşamın psikolojik boyutlarını kavrama, dinî gelişim sürecini değerlendirme, din ve ruh sağlığı arasındaki ilişkiyi irdeleme becerileri kazandırmayı hedefler. Bu kapsamda yürütülen dersler ve araştırmalar, öğrencilere hem teorik hem de uygulamalı düzeyde katkı sağlar."}, {"t": "p", "x": "Din Psikolojisi Anabilim Dalı, yalnızca akademik bilgiyi aktarmakla kalmayıp aynı zamanda bireyin dini tecrübelerinin insan ruh sağlığına katkısını anlamaya yönelik farkındalık geliştirmeyi, öğrencilere araştırma yapma, değerlendirme gibi yetkinlikler kazandırmayı amaç edinir. Ayrıca günümüz toplumsal sorunlarına çözüm üretme bağlamında, dini motivasyon ve başa çıkma stratejilerini bilimsel temelde ele alarak hem bireysel hem de toplumsal düzeyde katkı sunmayı hedefler."}], "courses": [["ILA248", "Din Psikolojisi"], ["ILA757", "Dini Ahlaki Gelişim Psikolojisi"], ["ILA765", "Ruh Sağlığı ve Din"], ["ILA769", "Dini Danışmanlık Hizmetleri ve Psikolojisi"]]}, {"ad": "Din Sosyolojisi", "b": ["Prof. Dr.", "Ömer DEMİR"], "u": true, "m": [["Arş. Gör.", "Derya EREN"]], "desc": [], "courses": []}, {"ad": "Din Eğitimi", "b": ["Prof. Dr.", "Ömer DEMİR"], "u": true, "m": [["Dr. Öğr. Üyesi", "Fatma GÖÇMEN"], ["Arş. Gör.", "Elif BİLGE"]], "desc": [{"t": "p", "x": "Din Eğitiminin bilimsel bir disiplin olarak üniversitelerde yer alışı, Batı’da 20. yüzyılın başlarına kadar uzanır. Türkiye’de ise Din eğitimi Bilimi’nin bilimsel disiplin olarak ortaya çıkışı, Ankara Üniversitesi Senatosu’nun 13.05.1980 tarihli onayıyla ilk olarak A.Ü. İlahiyat Fakültesi bünyesinde “Din Eğitimi Kürsüsü” kurulmasıyla başlar. 1982 yılında “Kürsü” isimlendirmesi yerine “Anabilim Dalı” kullanılmaya başlamıştır."}, {"t": "p", "x": "Din Eğitimi alanında ilk bilimsel çalışmalar Beyza Bilgin ile başlamıştır. Bilgin’in 1971’de hazırladığı “İslam’da Eğitimin Temeli Olarak Sevgi” adlı doktora tezi, Türkiye’de bu alandaki ilk bilimsel çalışmadır."}, {"t": "p", "x": "Din Eğitimi Bilimi’nin ilgi alanına giren konu başlıkları arasında şunlar sayılabilir: Eğitim ve din eğitimi bilimi ile ilgili tanım ve kavramlar; din eğitimi biliminin diğer bilimlerle ilişkisi; din eğitimi biliminin alanı, amacı, özellikleri, metotları, görevleri; Türkiye’de din eğitim ve öğretiminin tarihsel gelişimi; Türkiye’de din eğitiminin hukuki dayanakları; dünyanın farklı ülkelerinde din eğitimi; dini gelişim ve öğrenme; din öğretiminde program geliştirme ve yaklaşımlar; MEB bünyesinde örgün din eğitiminde istihdam olunmak üzere başta Din Kültürü ve Ahlak Bilgisi dersi öğretmeni olmak üzere seçmeli din dersleri ve İHL meslek dersleri alanında nitelikli öğretmen yetiştirmeye yönelik formasyon eğitimi; DİB bünyesinde yaygın din hizmetlerinde istihdam olunmak üzere mesleki din eğitimi ve din hizmetleri alanında yeterlik kazandırma; ailede din eğitimi; yetişkin din eğitimi; sosyal hizmet kurumlarında din eğitimi; yüksek din öğretimi; din eğitimi ve öğretiminin güncel problemleridir."}], "courses": [["", "Din Eğitimi"], ["", "Eğitime Giriş"], ["", "Eğitim Psikolojisi"], ["", "Eğitimde Ölçme ve Değerlendirme"], ["", "Öğretim Teknolojileri"], ["", "Öğretim İlke ve Yöntemleri"], ["", "Sınıf Yönetimi"], ["", "Özel Öğretim Yöntemleri"], ["", "Rehberlik ve Özel Eğitim"], ["", "Hitabet ve Mesleki Uygulama"], ["", "Öğretmenlik Uygulaması"]]}, {"ad": "Dinler Tarihi", "b": ["Prof. Dr.", "Ömer DEMİR"], "u": true, "m": [["Dr. Öğr. Üyesi", "Abdulali ALİEV"], ["Dr. Öğr. Üyesi", "Aliya MUTALLİMOVA"]], "desc": [{"t": "p", "x": "Dinler Tarihi, insanlık tarihinin başlangıcından günümüze kadar ortaya çıkan çeşitli dini inançları, ibadet biçimlerini, kutsal anlatıları, dinî kurumları ve ritüel pratikleri inceleyen bilimsel bir disiplindir. Bu alan, dini yalnızca teolojik bir konu olarak değil; tarihsel, kültürel, toplumsal ve antropolojik bir olgu olarak ele alır. Disiplinin temel hedefi, dinlerin nasıl doğduklarını, nasıl gelişip dönüştüklerini ve farklı toplumsal yapı ve kültürel ortamlarda nasıl anlam kazandıklarını tarihsel bir perspektifle analiz etmektir. Dinler Tarihi, dini geleneklerin ortaya çıkış süreçlerini, zamanla geçirdiği dönüşümleri, farklı dini sistemlerin birbirleriyle etkileşimini ve bu süreçlerin toplumlara yansımalarını tarafsız, bilimsel ve eleştirel yöntemlerle inceler. Bu yönüyle, inançların öznel doğrularından çok tarihsel gerçekliğe ve toplumsal etkilerine odaklanır."}, {"t": "p", "x": "Dinler Tarihi’nin ilgi alanı oldukça geniştir. Bu kapsamda incelenen temel başlıklar arasında antik uygarlıklarda dinî yaşam, Mezopotamya, Antik Mısır, Antik Yunan, Roma, Pers ve İbrani kültürlerinde tanrılar, tapınaklar, rahiplik kurumları ve mitolojik sistemler yer alır. Doğu dinleri olarak bilinen Hinduizm, Budizm, Caynizm, Taoizm, Konfüçyanizm ve Şintoizm gibi felsefi ve metafizik boyutu güçlü geleneklerin tarihî evrimi detaylı şekilde incelenir. Ayrıca, ilahi dinler olarak kabul edilen Yahudilik, Hıristiyanlık ve İslam’ın ortaya çıkışı, peygamberlik anlayışları, kutsal kitapları, mezhepleşme süreçleri ve tarih boyunca yaşadıkları dönüşümler ele alınır. Zerdüştlük, Maniheizm, Sihizm ve Bahailik gibi diğer önemli dinî gelenekler de araştırma alanına dahildir. Mitoloji ve din arasındaki ilişki, tanrı anlatılarının kökeni, kozmogoni, antropogoni ve eskatoloji inançlarının kültürlerarası karşılaştırmaları, yeni dinî hareketler ve modern çağda ortaya çıkan tarikat ve dini akımlar da disiplinin çalışma sahasına girer. Kutsal metinlerin tarihsel bağlamda anlaşılması, yorum geleneği ve metin çözümlemeleri ise Dinler Tarihi’nin önemli araştırma alanları arasındadır."}, {"t": "p", "x": "Dinler Tarihi çalışmaları çoğunlukla karşılaştırmalı ve eleştirel bir metodolojiye dayanır. Bu alandaki araştırmalar özellikle felsefe, sosyoloji, antropoloji, arkeoloji, filoloji ve psikoloji gibi disiplinlerin yöntemlerinden yararlanır. Felsefe dinlerin düşünsel arka planını ve etik anlayışını incelerken, sosyoloji din ile toplumsal yapı, otorite, kimlik, cinsiyet ve sınıf ilişkilerini analiz eder. Antropoloji, ritüellerin ve kutsal anlatıların kültürel kodlarını araştırır; arkeoloji ise tapınak yapıları, kutsal eşyalar ve dini ikonografi gibi maddi kalıntılar üzerinden dini yaşama ışık tutar. Filoloji, kutsal metinlerin orijinal dillerinde incelenmesini sağlarken psikoloji, bireysel düzeyde dini deneyimlerin ve bilinç yapılarının anlaşılmasına katkı sunar. Bu çok boyutlu bakış açısı sayesinde Dinler Tarihi, dinî olguları hem tarihî bağlamında hem de kültürel ve psikolojik etkileriyle bütünsel olarak değerlendirme imkânı sunar."}, {"t": "p", "x": "Günümüzde küreselleşme, kültürel etkileşimler, göç hareketleri ve dijitalleşme gibi olgular dinlerin gündelik yaşamda yeniden yorumlanmasına ve farklı kültürlerde yeni biçimlerde tezahür etmesine neden olmuştur. Dinler Tarihi, bu dönüşümleri anlamada hem akademik dünyada hem de toplumsal düzlemde önemli katkılar sunar. Farklı dinî geleneklerin tarihsel derinlikleri anlaşılır hale geldikçe, günümüzün çokkültürlü toplumlarında karşılıklı saygı ve anlayış gelişir. Ayrıca dinî fanatizmin, dogmatizmin ve ötekileştirmenin panzehiri olarak, dini olgulara tarihsel ve bilimsel yaklaşım geliştirmek Dinler Tarihi’nin en önemli katkılarından biridir. Aynı zamanda kutsal olanla bilimsel düşünce arasında bir denge kurmayı öğreterek, bilgiye eleştirel ve çözümleyici yaklaşımı teşvik eder. Dinler Tarihi, yalnızca geçmişe yönelik bir bilgi üretim alanı olmakla kalmaz; aynı zamanda bugünün dinî çeşitliliğini anlamak, hoşgörü kültürünü geliştirmek ve gelecekte dinî yaşamın nasıl şekillenebileceğini öngörmek için vazgeçilmez bir akademik disiplindir. İlahiyat fakültelerinde ve sosyal bilimlerin çeşitli alanlarında, dinin kutsala dair üretimlerini bilimsel zemin üzerinde çözümleme çabasını sürdüren dinamik ve güncel bir alandır."}], "courses": [["ILA4733", "Dinler Tarihi"], ["ILA7010", "Din Fenomenolojisi"], ["ILA713", "Anadolu Din Tarihi"], ["ILA746", "Genel Türk Din Tarihi"], ["ILA753", "Din ve Mitoloji"], ["ILA758", "Tarihte Dinler ve Semboller"], ["ILA759", "Yeni Dini Hareketler Sosyolojisi"], ["ILA761", "Yeni Dinler ve Kültler"], ["ILA763", "Mukayeseli Dinler Tarihi"], ["ILA768", "Ön Asya Dinleri"], ["ILA770", "Uzak Doğu Dinleri"], ["ILA771", "Dinler Coğrafyası"]]}]}];
+const COL = { tib: '#9B2441', fdb: '#1F6F6B', its: '#8F5F00' };
+const SHORT = { tib: ['Temel İslam', 'Bilimleri'], fdb: ['Felsefe ve Din', 'Bilimleri'], its: ['İslam Tarihi', 've Sanatları'] };
+const ORDER = ['tib', 'fdb', 'its'];
+const ANG = { tib: 0, fdb: 120, its: 240 };
+const SVGNS = 'http://www.w3.org/2000/svg';
+const CX = 280, CY = 250;
+
+const fold = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ı/g, 'i');
+const slug = s => fold(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const sv = (t, a) => { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+const B = {}; DATA.forEach(b => { B[b.id] = b; b.abd.forEach(a => { a.id = slug(a.ad); a.bid = b.id; }); });
+
+/* ---------- people counts (computed from the lists) ---------- */
+function people(b) {
+  const m = new Map();
+  b.abd.forEach(a => { [a.b].concat(a.m).forEach(p => { if (!m.has(p[1])) m.set(p[1], p[0]); }); });
+  return m;
+}
+function stats(b) {
+  const m = people(b), c = { 'Profesör': 0, 'Doçent': 0, 'Dr. Öğretim Üyesi': 0, 'Öğretim Görevlisi': 0, 'Araştırma Görevlisi': 0 };
+  m.forEach(u => {
+    if (u === 'Prof. Dr.') c['Profesör']++; else if (u === 'Doç. Dr.') c['Doçent']++; else if (u === 'Dr. Öğr. Üyesi') c['Dr. Öğretim Üyesi']++;
+    else if (u.startsWith('Öğr. Gör.')) c['Öğretim Görevlisi']++; else if (u.startsWith('Arş. Gör.')) c['Araştırma Görevlisi']++;
+  });
+  return { total: m.size, c };
+}
+
+/* ---------- the flower ---------- */
+function petal(id, i) {
+  const g = sv('g', { class: 'pt', 'data-b': id, 'aria-hidden': 'true', transform: 'rotate(' + ANG[id] + ' ' + CX + ' ' + CY + ')' });
+  g.style.setProperty('--d', (0.15 + i * 0.22) + 's');
+  const gr = sv('g', { class: 'grow' });
+  gr.appendChild(sv('path', { class: 'shape', fill: COL[id], d: 'M' + CX + ',' + CY + ' C' + (CX - 92) + ',' + (CY - 50) + ' ' + (CX - 104) + ',' + (CY - 180) + ' ' + CX + ',' + (CY - 238) + ' C' + (CX + 104) + ',' + (CY - 180) + ' ' + (CX + 92) + ',' + (CY - 50) + ' ' + CX + ',' + CY + ' Z' }));
+  gr.appendChild(sv('path', { class: 'vein', d: 'M' + CX + ',' + (CY - 48) + ' L' + CX + ',' + (CY - 196) }));
+  gr.appendChild(sv('path', { class: 'vein', d: 'M' + CX + ',' + (CY - 110) + ' q-32,-26 -46,-62 M' + CX + ',' + (CY - 110) + ' q32,-26 46,-62' }));
+  const a = 0, r = 140, lx = CX, ly = CY - r;
+  const t = sv('text', { x: lx, y: ly - 2, transform: 'rotate(' + (-ANG[id]) + ' ' + lx + ' ' + ly + ')' });
+  t.appendChild(sv('tspan', { x: lx, dy: 0 })).textContent = SHORT[id][0];
+  t.appendChild(sv('tspan', { x: lx, dy: 21 })).textContent = SHORT[id][1];
+  gr.appendChild(t);
+  g.appendChild(gr);
+  g.addEventListener('click', () => pick(id, true));
+  return g;
+}
+function drawFlower() {
+  const sway = document.getElementById('sway');
+  ORDER.forEach((id, i) => sway.appendChild(petal(id, i)));
+  ORDER.forEach(id => sway.appendChild(sv('circle', { class: 'burst', 'data-bu': id, cx: CX, cy: CY, r: 52, stroke: COL[id] })));
+  sway.appendChild(sv('circle', { class: 'ping', cx: CX, cy: CY, r: 52 }));
+  const st = sv('g', { class: 'stamens' });
+  for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; st.appendChild(sv('circle', { cx: CX + 66 * Math.sin(a), cy: CY - 66 * Math.cos(a), r: 4.5 })); }
+  sway.appendChild(st);
+  sway.appendChild(sv('circle', { class: 'core', cx: CX, cy: CY, r: 50 }));
+  const c1 = sv('text', { class: 'core-t', x: CX, y: CY - 2 }); c1.textContent = 'İLAHİYAT'; sway.appendChild(c1);
+  const c2 = sv('text', { class: 'core-t', x: CX, y: CY + 15, style: 'font-size:9.5px' }); c2.textContent = 'FAKÜLTESİ'; sway.appendChild(c2);
+  const pol = sv('g', { class: 'pollen', 'aria-hidden': 'true' });
+  for (let k = 0; k < 14; k++) {
+    const c = sv('circle', { cx: 90 + (k * 97) % 380, cy: 150 + (k * 53) % 260, r: 2 + (k % 3) });
+    c.style.setProperty('--d', (k * 0.7) + 's'); c.style.setProperty('--t', (6 + (k % 4)) + 's'); c.style.setProperty('--x', ((k % 2 ? 1 : -1) * (10 + k * 2)) + 'px');
+    pol.appendChild(c);
+  }
+  document.getElementById('flower').appendChild(pol);
+}
+
+/* ---------- pills ---------- */
+function drawPills() {
+  const box = document.getElementById('pills');
+  ORDER.forEach(id => {
+    const b = B[id], p = el('button', 'pill'); p.type = 'button'; p.setAttribute('role', 'tab'); p.setAttribute('aria-selected', 'false'); p.dataset.b = id; p.tabIndex = id === ORDER[0] ? 0 : -1;
+    p.style.setProperty('--c', COL[id]);
+    p.append(b.ad.replace(' Bölümü', ''), Object.assign(el('small', null, '· ' + b.abd.length + ' anabilim dalı')));
+    p.addEventListener('click', () => pick(id, true));
+    p.addEventListener('keydown', e => {
+      const i = ORDER.indexOf(id);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const n = ORDER[(i + (e.key === 'ArrowRight' ? 1 : 4)) % 3]; pick(n, true); box.querySelector('[data-b=' + n + ']').focus(); }
+    });
+    box.appendChild(p);
+  });
+}
+
+/* ---------- department panel ---------- */
+let cur = null;
+function pick(id, scroll) {
+  const first = cur === null;
+  const changed = cur !== id;
+  cur = id;
+  const fl = document.getElementById('flower'); fl.classList.add('has-sel');
+  document.querySelectorAll('.pt').forEach(p => p.classList.toggle('sel', p.dataset.b === id));
+  document.querySelectorAll('.pill').forEach(p => { p.setAttribute('aria-selected', p.dataset.b === id); p.tabIndex = (p.dataset.b === id || (first && p.dataset.b === ORDER[0])) ? 0 : -1; });
+  document.getElementById('hint').classList.add('gone');
+  const bu = document.querySelector('[data-bu=' + id + ']'); if (bu && changed) { bu.classList.remove('go'); void bu.getBoundingClientRect(); bu.classList.add('go'); }
+  if (changed) render(id);
+  if (scroll) document.getElementById('dept').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
+function render(id) {
+  const b = B[id], d = document.getElementById('dept');
+  d.hidden = false; d.className = 'dept'; void d.offsetWidth; d.classList.add('in');
+  d.style.setProperty('--c', COL[id]); d.replaceChildren();
+  const h = el('div', 'dh'); h.appendChild(el('h2', null, b.ad));
+  const w = el('p', 'who'); w.append('Bölüm Başkanı: ', b.b[0] + ' ' + b.b[1]);
+  if (b.y) { const s = el('span', null, '  ·  Başkan Yardımcısı: '); w.append(s, b.y[0] + ' ' + b.y[1]); }
+  h.appendChild(w);
+  const st = stats(b), ul = el('ul', 'stats');
+  ul.appendChild(el('li', null, st.total + ' akademik personel'));
+  Object.keys(st.c).forEach(k => { if (st.c[k]) ul.appendChild(el('li', null, st.c[k] + ' ' + k)); });
+  h.appendChild(ul); d.appendChild(h);
+  const intro = el('div', 'intro'); b.intro.forEach(p => intro.appendChild(el('p', null, p)));
+  intro.appendChild(el('p', null, 'Bölümümüzde ' + b.abd.map(a => a.ad).join(', ').replace(/, ([^,]*)$/, ' ve $1') + ' anabilim dalları yer almaktadır.'));
+  d.appendChild(intro);
+  const tools = el('div', 'tools');
+  const all = el('button', 'btn', 'Tümünü aç'), none = el('button', 'btn', 'Tümünü kapat');
+  all.type = none.type = 'button';
+  all.addEventListener('click', () => d.querySelectorAll('.leaf').forEach(l => setOpen(l, true)));
+  none.addEventListener('click', () => d.querySelectorAll('.leaf').forEach(l => setOpen(l, false)));
+  tools.append(all, none); d.appendChild(tools);
+  const vine = el('ol', 'vine');
+  b.abd.forEach((a, i) => vine.appendChild(leaf(a, i)));
+  d.appendChild(vine);
+}
+function leaf(a, i) {
+  const li = el('li', 'leaf'); li.style.setProperty('--i', i); li.id = a.id;
+  li.appendChild(sv('svg', { class: 'bud', viewBox: '0 0 26 26', 'aria-hidden': 'true' })).appendChild(sv('path', { d: 'M13 2 C22 6 24 16 13 24 C2 16 4 6 13 2 Z' }));
+  const card = el('div', 'card');
+  const hb = el('button', 'lh'); hb.type = 'button'; hb.setAttribute('aria-expanded', 'false'); hb.setAttribute('aria-controls', 'b-' + a.id);
+  const tx = el('span', 'tx'); tx.appendChild(el('span', 'nm', a.ad + ' Anabilim Dalı'));
+  tx.appendChild(el('span', 'hd', 'Başkan: ' + a.b[0] + ' ' + a.b[1] + (a.u ? ' (uhdesinde)' : '')));
+  hb.appendChild(tx);
+  const nP = 1 + a.m.length;
+  hb.appendChild(el('span', 'mt', nP + ' hoca' + (a.courses.length ? '\n' + a.courses.length + ' ders' : '')));
+  hb.lastChild.style.whiteSpace = 'pre-line';
+  hb.addEventListener('click', () => setOpen(li, !li.classList.contains('open')));
+  card.appendChild(hb);
+  const bw = el('div', 'lbw'), bi = el('div', 'lbi'), bc = el('div', 'lbc'); bc.id = 'b-' + a.id; bc.setAttribute('role', 'region'); bc.setAttribute('aria-label', a.ad + ' Anabilim Dalı');
+  a.desc.forEach(x => {
+    if (x.t === 'p') bc.appendChild(el('p', null, x.x));
+    else { const u = el('ul', 'ls'); x.x.forEach(t => u.appendChild(el('li', null, t))); bc.appendChild(u); }
+  });
+  bc.appendChild(el('h3', null, 'Öğretim elemanları'));
+  const ml = el('ul', 'mem');
+  const row = (p, tag) => { const r = el('li'); r.dataset.k = fold(p[1]); r.appendChild(el('span', 'u', p[0])); r.appendChild(el('span', 'n', p[1])); if (tag) r.appendChild(el('span', 't', tag)); return r; };
+  ml.appendChild(row(a.b, a.u ? 'Başkan (uhdesinde)' : 'Başkan'));
+  a.m.forEach(p => ml.appendChild(row(p)));
+  bc.appendChild(ml);
+  if (a.courses.length) {
+    bc.appendChild(el('h3', null, 'Anabilim dalı dersleri'));
+    const cl = el('ul', 'crs');
+    a.courses.forEach(c => { const r = el('li'); r.dataset.k = fold(c[0] + ' ' + c[1]); r.appendChild(el('span', 'cd', c[0])); r.appendChild(el('span', null, c[1])); cl.appendChild(r); });
+    bc.appendChild(cl);
+  }
+  bi.appendChild(bc); bw.appendChild(bi); card.appendChild(bw); li.appendChild(card);
+  return li;
+}
+function setOpen(li, on) {
+  li.classList.toggle('open', on);
+  li.querySelector('.lh').setAttribute('aria-expanded', on);
+}
+
+/* ---------- search ---------- */
+const IDX = [];
+DATA.forEach(b => b.abd.forEach(a => {
+  IDX.push({ k: 'Anabilim dalı', t: a.ad + ' Anabilim Dalı', w: b.ad, f: fold(a.ad), a: a });
+  [a.b].concat(a.m).forEach(p => IDX.push({ k: 'Öğretim elemanı', t: p[0] + ' ' + p[1], w: a.ad + ' · ' + b.ad, f: fold(p[1]), a: a, h: fold(p[1]) }));
+  a.courses.forEach(c => IDX.push({ k: 'Ders', t: (c[0] ? c[0] + ' · ' : '') + c[1], w: a.ad + ' · ' + b.ad, f: fold(c[0] + ' ' + c[1]), a: a, h: fold(c[0] + ' ' + c[1]) }));
+}));
+const q = document.getElementById('q'), res = document.getElementById('res'), cnt = document.getElementById('cnt');
+q.addEventListener('input', () => {
+  const v = fold(q.value.trim());
+  res.replaceChildren();
+  if (v.length < 2) { res.hidden = true; cnt.textContent = ''; return; }
+  const hits = IDX.filter(x => x.f.includes(v));
+  cnt.textContent = hits.length ? hits.length + ' sonuç' + (hits.length > 40 ? ' (ilk 40 gösteriliyor)' : '') : 'Sonuç bulunamadı';
+  res.hidden = !hits.length;
+  hits.slice(0, 40).forEach(x => {
+    const li = el('li'), b = el('button'); b.type = 'button';
+    b.appendChild(el('span', 'k', x.k));
+    const s = el('span', null, x.t); s.appendChild(el('span', 'w', x.w)); b.appendChild(s);
+    b.addEventListener('click', () => go(x.a.id, x.h));
+    li.appendChild(b); res.appendChild(li);
+  });
+});
+q.addEventListener('keydown', e => { if (e.key === 'Escape') { q.value = ''; q.dispatchEvent(new Event('input')); } });
+
+function go(abdId, hit) {
+  const a = DATA.flatMap(b => b.abd).find(x => x.id === abdId); if (!a) return;
+  pick(a.bid, false);
+  const li = document.getElementById(abdId); if (!li) return;
+  li.style.animation = 'none';
+  setOpen(li, true);
+  li.querySelectorAll('.hit').forEach(n => n.classList.remove('hit'));
+  let target = li;
+  if (hit) { const n = [...li.querySelectorAll('[data-k]')].find(r => r.dataset.k.includes(hit)); if (n) { n.classList.add('hit'); target = n; } }
+  setTimeout(() => target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }), 480);
+}
+
+/* ---------- hash routing ---------- */
+function route() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!h) return;
+  if (B[h]) { pick(h, true); return; }
+  if (document.getElementById(h) || DATA.some(b => b.abd.some(a => a.id === h))) go(h);
+}
+drawFlower(); drawPills(); document.querySelector('.pill').tabIndex = 0;
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
