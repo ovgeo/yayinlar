@@ -276,7 +276,7 @@ function card(p) {
   if (p.a) info.appendChild(el('div', 'a', p.a));
   if (p.roles.length) { const r = el('div', 'roles'); p.roles.forEach(x => r.appendChild(el('span', 'role', x))); info.appendChild(r); }
   const acts = el('div', 'acts');
-  if (p.g[0] !== 'idr' && p.av !== '-' && p.m) {
+  if (p.g[0] !== 'idr' && p.av !== '-' && (p.av || p.m)) {
     const a = el('a', 'btn pri'); a.href = AVESIS + (p.av || p.m); a.target = '_blank'; a.rel = 'noopener';
     a.setAttribute('aria-label', p.n + ' – Avesis profili (yeni sekmede açılır)'); a.textContent = 'Avesis profili'; acts.appendChild(a);
   }
