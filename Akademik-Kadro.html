@@ -82,6 +82,78 @@ ul { list-style: none; margin: 0; padding: 0; }
 </div>
 
 <script>
+(async () => {
+/* ===== KADRO VERİSİ =====
+   Kişiler ve görevleri Google Sheet'te tutulur (Kadro ve Gorevler sayfaları). Sheet'te
+   "Dosya → Paylaş → Web'de yayınla → CSV" ile her sayfanın bağlantısı alınır ve aşağıya yazılır.
+   Bağlantılar boşsa ya da Sheet'e ulaşılamazsa, sayfanın içindeki gömülü kopya kullanılır. */
+const KADRO_SHEET = {
+  kadro: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjTsFIQQjUArN0s2jeskw9RYyngWC96n249nC46PPA3-oMelVVC1ayc9T9Uol3W04OfAKOBQT504GN/pub?gid=1089692875&single=true&output=csv',
+  gorev: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjTsFIQQjUArN0s2jeskw9RYyngWC96n249nC46PPA3-oMelVVC1ayc9T9Uol3W04OfAKOBQT504GN/pub?gid=1006383363&single=true&output=csv'
+};
+const KADRO_GOMULU = {"kadro": "id,unvan,ad_soyad,alan_gorev,dahili,eposta_adi,eposta_alani,avesis,grup,bolum,aktif\nismail-pirlanta,Prof. Dr.,İsmail PIRLANTA,,6101,ismail.pirlanta,yobu.edu.tr,ismail.pirlanta,Akademik,,evet\nmehmet-tozluyurt,Prof. Dr.,Mehmet TÖZLUYURT,,6176,mehmet.tozluyurt,yobu.edu.tr,mehmet.tozluyurt,Akademik,Temel İslam Bilimleri,evet\nyasin-gokhan,Dr. Öğr. Üyesi,Yasin GÖKHAN,,6112,yasin.gokhan,yobu.edu.tr,yasin.gokhan,Akademik,,evet\nabdulkadir-dundar,Prof. Dr.,Abdulkadir DÜNDAR,,6174,abdulkadir.dundar,yobu.edu.tr,abdulkadir.dundar,Akademik,İslam Tarihi ve Sanatları,evet\ntalip-ozdes,Prof. Dr.,Talip ÖZDEŞ,Tefsir,5450,talip.ozdes,yobu.edu.tr,talip.ozdes,Akademik,Temel İslam Bilimleri,evet\nomer-demir,Prof. Dr.,Ömer DEMİR,,5452,o.demir,yobu.edu.tr,o.demir,Akademik,Felsefe ve Din Bilimleri,evet\nhakki-aydin,Prof. Dr.,Hakkı AYDIN,İslam Hukuku,5451,hakki.aydin,yobu.edu.tr,hakki.aydin,Akademik,Temel İslam Bilimleri,evet\ngulhan-turk,Prof. Dr.,Gülhan TÜRK,Arap Dili ve Belagatı,5402,gulhan.turk,yobu.edu.tr,gulhan.turk,Akademik,Temel İslam Bilimleri,evet\nhalil-ozturk,Doç. Dr.,Halil ÖZTÜRK,Kelam,5441,halil.ozturk,yobu.edu.tr,halil.ozturk,Akademik,Temel İslam Bilimleri,evet\nsezai-bekdemir,Doç. Dr.,Sezai BEKDEMİR,İslam Hukuku,5440,sezai.bekdemir,yobu.edu.tr,sezai.bekdemir,Akademik,Temel İslam Bilimleri,evet\nyusuf-akgul,Doç. Dr.,Yusuf AKGÜL,Hadis,5448,yusuf.akgul,yobu.edu.tr,yusuf.akgul,Akademik,Temel İslam Bilimleri,evet\nselahattin-yakut,Doç. Dr.,Selahattin YAKUT,Din Psikolojisi,5495,selahattin.yakut,yobu.edu.tr,selahattin.yakut,Akademik,Felsefe ve Din Bilimleri,evet\nali-binol,Doç. Dr.,Ali BİNOL,Tefsir,5319,ali.binol,yobu.edu.tr,ali.binol,Akademik,Temel İslam Bilimleri,evet\nnilufer-ates,Doç. Dr.,Nilüfer ATEŞ,Siyer-i Nebi ve İslam Tarihi,5358,nilufer.ates,yobu.edu.tr,nilufer.ates,Akademik,İslam Tarihi ve Sanatları,evet\nihsan-ovge-ozturk,Dr. Öğr. Üyesi,İhsan Övge ÖZTÜRK,Mantık,6176,i.ovge.ozturk,yobu.edu.tr,i.ovge.ozturk,Akademik,Felsefe ve Din Bilimleri,evet\nhuseyin-yuner,Dr. Öğr. Üyesi,Hüseyin YÜNER,İslam Sanatları ve Dini Musiki,5350,huseyin.yuner,yobu.edu.tr,huseyin.yuner,Akademik,İslam Tarihi ve Sanatları,evet\nabdulali-aliev,Dr. Öğr. Üyesi,Abdulali ALİEV,Dinler Tarihi,5497,a.aliev,yobu.edu.tr,a.aliev,Akademik,Felsefe ve Din Bilimleri,evet\nmunteha-beki,Dr. Öğr. Üyesi,Münteha BEKİ,Din Felsefesi,5498,munteha.beki,yobu.edu.tr,munteha.beki,Akademik,Felsefe ve Din Bilimleri,evet\naliya-mutallimova,Dr. Öğr. Üyesi,Aliya MUTALLİMOVA,Dinler Tarihi,5336,aliya.sharafullina,yobu.edu.tr,aliya.sharafullina,Akademik,Felsefe ve Din Bilimleri,evet\nfatma-gocmen,Dr. Öğr. Üyesi,Fatma GÖÇMEN,Din Eğitimi,5494,fatma.gocmen,bozok.edu.tr,fatma.gocmen,Akademik,Felsefe ve Din Bilimleri,evet\ntugba-yildirim,Dr. Öğr. Üyesi,Tuğba YILDIRIM,Tefsir,5439,tugba.uysal,yobu.edu.tr,tugba.uysal,Akademik,Temel İslam Bilimleri,evet\nedibe-boyraz,Dr. Öğr. Üyesi,Edibe BOYRAZ,Tasavvuf,5434,edibe.boyraz,yobu.edu.tr,edibe.boyraz,Akademik,Temel İslam Bilimleri,evet\ntalha-erdem,Dr. Öğr. Üyesi,Talha ERDEM,Tefsir,5326,talha.erdem,yobu.edu.tr,talha.erdem,Akademik,Temel İslam Bilimleri,evet\ndadas-mutallim,Dr. Öğr. Üyesi,Dadaş MUTALLİM,Siyer-i Nebi ve İslam Tarihi,5355,dadas.mutallim,yobu.edu.tr,dadas.mutallim,Akademik,İslam Tarihi ve Sanatları,evet\nyunus-cakir,Dr. Öğr. Üyesi,Yunus ÇAKIR,Arap Dili ve Belagatı,6108,yunus.cakir,yobu.edu.tr,yunus.cakir,Akademik,Temel İslam Bilimleri,evet\nhatice-goktas,Dr. Öğr. Üyesi,Hatice GÖKTAŞ,İslam Felsefesi,5420,hatice.goktas,yobu.edu.tr,hatice.goktas,Akademik,Felsefe ve Din Bilimleri,evet\nnevriye-sumeyra-calik,Öğr. Gör. Dr.,Nevriye Sümeyra ÇALIK,Arap Dili ve Belagatı,6123,sumeyra.calik,yobu.edu.tr,sumeyra.calik,Akademik,Temel İslam Bilimleri,evet\nadem-yener,Öğr. Gör. Dr.,Adem YENER,Arap Dili ve Belagatı,6140,adem.yener,yobu.edu.tr,adem.yener,Akademik,Temel İslam Bilimleri,evet\nibrahim-kilincer,Öğr. Gör.,İbrahim KILINÇER,Tefsir,6142,ibrahim.kilincer,yobu.edu.tr,ibrahim.kilincer,Akademik,Temel İslam Bilimleri,evet\nyasin-bedir,Öğr. Gör.,Yasin BEDİR,Kuran-ı Kerim Okuma ve Kıraat,5470,yasin.bedir,yobu.edu.tr,yasin.bedir,Akademik,Temel İslam Bilimleri,evet\nyasin-cenan,Öğr. Gör.,Yasin CENAN,Kuran-ı Kerim Okuma ve Kıraat,5328,yasin.cenan,yobu.edu.tr,yasin.cenan,Akademik,Temel İslam Bilimleri,evet\nanas-mslm,Öğr. Gör.,Anas MSLM,Arap Dili ve Belagatı,6170,anas.mslm,yobu.edu.tr,anas.mslm,Akademik,Temel İslam Bilimleri,evet\nmunevver-bayram,Öğr. Gör.,Münevver BAYRAM,Arap Dili ve Belagatı,6123,munevver.bayram,yobu.edu.tr,munevver.bayram,Akademik,Temel İslam Bilimleri,evet\nhabip-uz,Öğr. Gör.,Habip UZ,Arap Dili ve Belagatı,6129,habip.uz,yobu.edu.tr,habip.uz,Akademik,Temel İslam Bilimleri,evet\nmehmet-ozudogru,Öğr. Gör.,Mehmet ÖZÜDOĞRU,Kuran-ı Kerim Okuma ve Kıraat,5458,mehmet.ozudogru,bozok.edu.tr,mehmet.ozudogru,Akademik,Temel İslam Bilimleri,evet\nsafiye-inceyilmaz-mslm,Arş. Gör. Dr.,Safiye İNCEYILMAZ MSLM,Hadis,5437,safiye.inceyilmaz,yobu.edu.tr,safiye.inceyilmaz,Akademik,Temel İslam Bilimleri,evet\nesma-aygun-yakin,Arş. Gör. Dr.,Esma AYGÜN YAKIN,Din Felsefesi,5492,esma.yakin,yobu.edu.tr,esma.yakin,Akademik,Felsefe ve Din Bilimleri,evet\nrahime-eymen-bakir,Arş. Gör. Dr.,Rahime Eymen BAKIR,Din Psikolojisi,5461,r.eymen.bakir,yobu.edu.tr,r.eymen.bakir,Akademik,Felsefe ve Din Bilimleri,evet\nmurat-oktem,Arş. Gör. Dr.,Murat ÖKTEM,Hadis,5424,murat.oktem,bozok.edu.tr,murat.oktem,Akademik,Temel İslam Bilimleri,evet\nemre-karadavut,Arş. Gör.,Emre KARADAVUT,İslam Sanatları ve Dini Musiki,5361,emre.karadavut,yobu.edu.tr,emre.karadavut,Akademik,İslam Tarihi ve Sanatları,evet\ntugba-sahbaz-altinsoy,Arş. Gör.,Tuğba ŞAHBAZ ALTINSOY,Siyer-i Nebi ve İslam Tarihi,5357,tugba.sahbaz,yobu.edu.tr,tugba.sahbaz,Akademik,İslam Tarihi ve Sanatları,evet\nalper-cirpan,Arş. Gör.,Alper ÇIRPAN,Arap Dili ve Belagatı,6144,alper.cirpan,yobu.edu.tr,alper.cirpan,Akademik,Temel İslam Bilimleri,evet\nyeter-ozdemir,Arş. Gör.,Yeter ÖZDEMİR,İslam Hukuku,5426,yeter.ozdemir,yobu.edu.tr,yeter.ozdemir,Akademik,Temel İslam Bilimleri,evet\nderya-eren,Arş. Gör.,Derya EREN,Din Sosyolojisi,,derya.eren,yobu.edu.tr,derya.eren,Akademik,Felsefe ve Din Bilimleri,evet\nmuhammed-mazlum,Arş. Gör.,Muhammed MAZLUM,Kelam,,,,-,Akademik,Temel İslam Bilimleri,evet\nelif-bilge,Arş. Gör. Dr.,Elif BİLGE,Din Eğitimi,5460,elif.bilge,yobu.edu.tr,elif.bilge,Akademik,Felsefe ve Din Bilimleri,evet\nhumeyra-ozturk,Arş. Gör.,Hümeyra ÖZTÜRK,Tasavvuf,,humeyra.ozturk,bozok.edu.tr,humeyra.ozturk,Akademik,Temel İslam Bilimleri,evet\ncuma-aslan,,Cüma ASLAN,Fakülte Sekreteri,6149,cuma.aslan,yobu.edu.tr,-,İdari,,evet\nnezaket-kizilay,,Nezaket KIZILAY,Dekan Sekreteri,6100,nezaket.kizilay,yobu.edu.tr,-,İdari,,evet\nebu-bekir-kaya,,Ebu Bekir KAYA,Bölüm Sekreteri – Öğrenci İşleri,6120,e.bekir.kaya,yobu.edu.tr,-,İdari,,evet\nleyla-sipahi,,Leyla SİPAHİ,Mutemet,6168,leyla.sipahi,yobu.edu.tr,-,İdari,,evet\nseda-kuru,,Seda KURU,Yazı İşleri,6169,seda.kuru,yobu.edu.tr,-,İdari,,evet\nnesibe-ortac,,Nesibe ORTAÇ,Büro Personeli,6105,nesibe.ortac,yobu.edu.tr,-,İdari,,evet\nmustafa-karakoc,,Mustafa KARAKOÇ,Kütüphane,5459,mustafa.karakoc,bozok.edu.tr,-,İdari,,evet\nsemra-yilmaz,,Semra YILMAZ,Çay Ocağı (Ek Bina),,,,-,İdari,,evet\nsule-sahin,,Şule ŞAHİN,Çay Ocağı (Ana Bina),6160,,,-,İdari,,evet\nguvenlik,,Güvenlik,,6147,,,-,İdari,,evet\nmelek-cosgun-solak,Dr. Öğr. Üyesi,Melek COŞGUN SOLAK,,,,,melek.cosgun,Akademik,Felsefe ve Din Bilimleri,evet\n", "gorev": "id,birim_turu,birim,ust_birim,rol\nismail-pirlanta,Dekanlık,Dekanlık,,Dekan\nmehmet-tozluyurt,Dekanlık,Dekanlık,,Dekan Yardımcısı\nyasin-gokhan,Dekanlık,Dekanlık,,Dekan Yardımcısı\ncuma-aslan,Dekanlık,Dekanlık,,Fakülte Sekreteri\nabdulkadir-dundar,Bölüm,İslam Tarihi ve Sanatları,,Bölüm Başkanı\ndadas-mutallim,Bölüm,İslam Tarihi ve Sanatları,,Bölüm Başkan Yardımcısı\ndadas-mutallim,Anabilim Dalı,İslam Tarihi,İslam Tarihi ve Sanatları,Başkan\nismail-pirlanta,Anabilim Dalı,İslam Tarihi,İslam Tarihi ve Sanatları,Üye\nnilufer-ates,Anabilim Dalı,İslam Tarihi,İslam Tarihi ve Sanatları,Üye\ntugba-sahbaz-altinsoy,Anabilim Dalı,İslam Tarihi,İslam Tarihi ve Sanatları,Üye\nnilufer-ates,Anabilim Dalı,Türk İslam Edebiyatı,İslam Tarihi ve Sanatları,Başkan\nabdulkadir-dundar,Anabilim Dalı,Türk İslam Sanatları Tarihi,İslam Tarihi ve Sanatları,Başkan\nemre-karadavut,Anabilim Dalı,Türk İslam Sanatları Tarihi,İslam Tarihi ve Sanatları,Üye\nhuseyin-yuner,Anabilim Dalı,Türk Din Musikisi,İslam Tarihi ve Sanatları,Başkan\nmehmet-tozluyurt,Bölüm,Temel İslam Bilimleri,,Bölüm Başkanı\nhalil-ozturk,Bölüm,Temel İslam Bilimleri,,Bölüm Başkan Yardımcısı\ngulhan-turk,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Başkan\nnevriye-sumeyra-calik,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nyunus-cakir,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nanas-mslm,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nadem-yener,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nmunevver-bayram,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nhabip-uz,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nalper-cirpan,Anabilim Dalı,Arap Dili ve Belagatı,Temel İslam Bilimleri,Üye\nsezai-bekdemir,Anabilim Dalı,İslam Hukuku,Temel İslam Bilimleri,Başkan\nhakki-aydin,Anabilim Dalı,İslam Hukuku,Temel İslam Bilimleri,Üye\nyeter-ozdemir,Anabilim Dalı,İslam Hukuku,Temel İslam Bilimleri,Üye\nmehmet-tozluyurt,Anabilim Dalı,Kelam,Temel İslam Bilimleri,Başkan\nhalil-ozturk,Anabilim Dalı,Kelam,Temel İslam Bilimleri,Üye\nmuhammed-mazlum,Anabilim Dalı,Kelam,Temel İslam Bilimleri,Üye\nyasin-bedir,Anabilim Dalı,Kur’an-ı Kerim Okuma ve Kıraat İlmi,Temel İslam Bilimleri,Başkan\nyasin-cenan,Anabilim Dalı,Kur’an-ı Kerim Okuma ve Kıraat İlmi,Temel İslam Bilimleri,Üye\nmehmet-ozudogru,Anabilim Dalı,Kur’an-ı Kerim Okuma ve Kıraat İlmi,Temel İslam Bilimleri,Üye\nedibe-boyraz,Anabilim Dalı,Tasavvuf,Temel İslam Bilimleri,Başkan\nhumeyra-ozturk,Anabilim Dalı,Tasavvuf,Temel İslam Bilimleri,Üye\nali-binol,Anabilim Dalı,Tefsir,Temel İslam Bilimleri,Başkan\ntalip-ozdes,Anabilim Dalı,Tefsir,Temel İslam Bilimleri,Üye\ntugba-yildirim,Anabilim Dalı,Tefsir,Temel İslam Bilimleri,Üye\ntalha-erdem,Anabilim Dalı,Tefsir,Temel İslam Bilimleri,Üye\nibrahim-kilincer,Anabilim Dalı,Tefsir,Temel İslam Bilimleri,Üye\nyusuf-akgul,Anabilim Dalı,Hadis,Temel İslam Bilimleri,Başkan\nsafiye-inceyilmaz-mslm,Anabilim Dalı,Hadis,Temel İslam Bilimleri,Üye\nmurat-oktem,Anabilim Dalı,Hadis,Temel İslam Bilimleri,Üye\nhalil-ozturk,Anabilim Dalı,İslam Mezhepleri Tarihi,Temel İslam Bilimleri,Başkan\nomer-demir,Bölüm,Felsefe ve Din Bilimleri,,Bölüm Başkanı\nselahattin-yakut,Bölüm,Felsefe ve Din Bilimleri,,Bölüm Başkan Yardımcısı\nmunteha-beki,Anabilim Dalı,Din Felsefesi,Felsefe ve Din Bilimleri,Başkan\nyasin-gokhan,Anabilim Dalı,Din Felsefesi,Felsefe ve Din Bilimleri,Üye\nesma-aygun-yakin,Anabilim Dalı,Din Felsefesi,Felsefe ve Din Bilimleri,Üye\nselahattin-yakut,Anabilim Dalı,Din Psikolojisi,Felsefe ve Din Bilimleri,Başkan\nrahime-eymen-bakir,Anabilim Dalı,Din Psikolojisi,Felsefe ve Din Bilimleri,Üye\nomer-demir,Anabilim Dalı,Din Sosyolojisi,Felsefe ve Din Bilimleri,Başkan (uhdesinde)\nderya-eren,Anabilim Dalı,Din Sosyolojisi,Felsefe ve Din Bilimleri,Üye\nomer-demir,Anabilim Dalı,Dinler Tarihi,Felsefe ve Din Bilimleri,Başkan (uhdesinde)\nabdulali-aliev,Anabilim Dalı,Dinler Tarihi,Felsefe ve Din Bilimleri,Üye\naliya-mutallimova,Anabilim Dalı,Dinler Tarihi,Felsefe ve Din Bilimleri,Üye\nomer-demir,Anabilim Dalı,Din Eğitimi,Felsefe ve Din Bilimleri,Başkan (uhdesinde)\nfatma-gocmen,Anabilim Dalı,Din Eğitimi,Felsefe ve Din Bilimleri,Üye\nelif-bilge,Anabilim Dalı,Din Eğitimi,Felsefe ve Din Bilimleri,Üye\nomer-demir,Anabilim Dalı,İslam Felsefesi,Felsefe ve Din Bilimleri,Başkan (uhdesinde)\nhatice-goktas,Anabilim Dalı,İslam Felsefesi,Felsefe ve Din Bilimleri,Üye\nihsan-ovge-ozturk,Anabilim Dalı,Mantık,Felsefe ve Din Bilimleri,Başkan\nyasin-gokhan,Anabilim Dalı,Felsefe Tarihi,Felsefe ve Din Bilimleri,Başkan\nmelek-cosgun-solak,Anabilim Dalı,Din Sosyolojisi,Felsefe ve Din Bilimleri,Üye\n"};
+const kFold = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ı/g, 'i').replace(/\s+/g, ' ').trim();
+function kCsv(t) {
+  const R = []; let r = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { r.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && t[i + 1] === '\n') i++; r.push(f); f = ''; R.push(r); r = []; }
+    else f += c;
+  }
+  if (f !== '' || r.length) { r.push(f); R.push(r); }
+  return R;
+}
+function kTablo(t) {
+  const R = kCsv(t).filter(r => r.some(x => x.trim()));
+  const h = R.shift().map(x => x.trim().toLowerCase());
+  return R.map(r => { const o = {}; h.forEach((k, i) => o[k] = (r[i] || '').trim()); return o; });
+}
+async function kOku(url) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), 5000);
+  try { const r = await fetch(url, { signal: c.signal }); if (!r.ok) throw new Error('http'); return await r.text(); } finally { clearTimeout(t); }
+}
+async function kadroYukle() {
+  let K, G, kaynak = 'Sheet';
+  try {
+    if (!KADRO_SHEET.kadro || !KADRO_SHEET.gorev) throw new Error('yok');
+    const [a, b] = await Promise.all([kOku(KADRO_SHEET.kadro), kOku(KADRO_SHEET.gorev)]);
+    K = kTablo(a); G = kTablo(b);
+    if (K.length < 20 || !('ad_soyad' in K[0]) || !G.length || !('birim' in G[0]) || !('rol' in G[0])) throw new Error('bicim');
+  } catch (e) { kaynak = 'gömülü kopya (Sheet’e ulaşılamadı)'; K = kTablo(KADRO_GOMULU.kadro); G = kTablo(KADRO_GOMULU.gorev); }
+  if (/[?&]kaynak/.test(location.search)) { const d = document.createElement('div'); d.textContent = 'Kadro verisi: ' + kaynak + ' · ' + K.length + ' kişi'; d.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:4px 10px;border-radius:6px;background:#1b1b1b;color:#fff;font:12px system-ui,sans-serif'; document.body.appendChild(d); }
+  const pasif = x => ['hayır', 'hayir', 'h', '0', 'hayır '].includes((x.aktif || '').toLowerCase());
+  K = K.filter(x => x.id && x.ad_soyad && !pasif(x));
+  const byId = {}, byName = {}; K.forEach(x => { byId[x.id] = x; byName[kFold(x.ad_soyad)] = x; });
+  G = G.filter(x => byId[x.id] && x.birim);
+  const kisi = id => [byId[id].unvan, byId[id].ad_soyad];
+  const BL = [['its', 'İslam Tarihi ve Sanatları'], ['tib', 'Temel İslam Bilimleri'], ['fdb', 'Felsefe ve Din Bilimleri']];
+  const birimler = BL.map(([id, ad]) => {
+    const rows = G.filter(x => x.birim_turu === 'Bölüm' && x.birim === ad);
+    const bas = rows.find(x => x.rol === 'Bölüm Başkanı'), yrd = rows.find(x => x.rol === 'Bölüm Başkan Yardımcısı');
+    const abd = [], seen = {};
+    G.filter(x => x.birim_turu === 'Anabilim Dalı' && x.ust_birim === ad).forEach(x => {
+      let a = seen[x.birim];
+      if (!a) { a = seen[x.birim] = { ad: x.birim, b: null, u: false, m: [] }; abd.push(a); }
+      if (x.rol.startsWith('Başkan')) { a.b = kisi(x.id); a.u = /uhdesinde/.test(x.rol); } else a.m.push(kisi(x.id));
+    });
+    abd.forEach(a => { if (!a.b) a.b = ['', '—']; });
+    return { id, ad: ad + ' Bölümü', b: bas ? kisi(bas.id) : ['', '—'], y: yrd ? kisi(yrd.id) : null, abd };
+  });
+  return { K, G, byId, byName, birimler, kisi, roller: id => G.filter(x => x.id === id) };
+}
+/* [unvan, ad, ...] dizilerindeki unvanı Sheet'teki güncel unvanla değiştirir (iç içe dizilerde de) */
+function kadroUnvanDuzelt(x, KD) {
+  if (Array.isArray(x)) {
+    if (x.length >= 2 && x[0] && typeof x[0] === 'string' && typeof x[1] === 'string' && KD.byName[kFold(x[1])]) { x[0] = KD.byName[kFold(x[1])].unvan; return x; }
+    x.forEach(y => kadroUnvanDuzelt(y, KD));
+  }
+  return x;
+}
+
+
 /* Staff, as listed on the faculty page (bozok.edu.tr/okul/ilahiyat-fakultesi/sayfa/akademik-ve-idari-personel/762).
    Each row: [unvan, name, alan, dahili, e-mail name, mail domain, groups, roles, avesis]
    - groups: first one is where the person is listed; any further ones only add the person to that filter.
@@ -93,7 +165,7 @@ const ORDER = ['dek', 'tib', 'fdb', 'its', 'idr'];
 const AVESIS = 'https://avesis.bozok.edu.tr/';
 const DOMAIN = { y: 'yobu.edu.tr', b: 'bozok.edu.tr' };
 const ARA = 'Arap Dili ve Belagatı', KUR = 'Kuran-ı Kerim Okuma ve Kıraat', SIY = 'Siyer-i Nebi ve İslam Tarihi', SAN = 'İslam Sanatları ve Dini Musiki';
-const P = [
+let P = [
   ['Prof. Dr.', 'İsmail PIRLANTA', '', '6101', 'ismail.pirlanta', 'y', ['dek'], ['Dekan']],
   ['Prof. Dr.', 'Mehmet TÖZLUYURT', '', '6176', 'mehmet.tozluyurt', 'y', ['dek', 'tib'], ['Dekan Yardımcısı', 'Temel İslam Bilimleri Bölüm Başkanı']],
   ['Dr. Öğr. Üyesi', 'Yasin GÖKHAN', '', '6112', 'yasin.gokhan', 'y', ['dek'], ['Dekan Yardımcısı']],
@@ -154,6 +226,26 @@ const P = [
   ['', 'Güvenlik', '', '6147', '', '', ['idr'], [], '-']
 ];
 const RANK = { 'Prof. Dr.': 1, 'Doç. Dr.': 2, 'Dr. Öğr. Üyesi': 3, 'Öğr. Gör. Dr.': 4, 'Öğr. Gör.': 5, 'Arş. Gör. Dr.': 6, 'Arş. Gör.': 7 };
+
+const KD = await kadroYukle();
+{
+  const BK = { 'Temel İslam Bilimleri': 'tib', 'Felsefe ve Din Bilimleri': 'fdb', 'İslam Tarihi ve Sanatları': 'its' };
+  P = KD.K.map(x => {
+    const rl = KD.roller(x.id);
+    const dek = rl.some(g => g.birim_turu === 'Dekanlık' && g.rol.startsWith('Dekan'));
+    const bk = BK[x.bolum] || '';
+    const grp = x.grup === 'İdari' ? ['idr'] : (dek ? ['dek'].concat(bk ? [bk] : []) : [bk || 'idr']);
+    const roles = [];
+    rl.forEach(g => {
+      if (g.birim_turu === 'Dekanlık' && (g.rol === 'Dekan' || g.rol === 'Dekan Yardımcısı')) roles.push(g.rol);
+      if (g.birim_turu === 'Bölüm' && g.rol === 'Bölüm Başkanı') roles.push(g.birim + ' Bölüm Başkanı');
+    });
+    const dom = /^yobu/.test(x.eposta_alani) ? 'y' : /^bozok/.test(x.eposta_alani) ? 'b' : '';
+    const av = x.avesis === '-' ? '-' : (x.avesis && x.avesis !== x.eposta_adi ? x.avesis : (x.eposta_adi ? undefined : '-'));
+    return [x.unvan, x.ad_soyad, x.alan_gorev, x.dahili, x.eposta_adi, dom, grp, roles, av];
+  });
+}
+
 const people = P.map((r, i) => ({ i, u: r[0], n: r[1], a: r[2], d: r[3], m: r[4], dom: r[5], g: r[6], roles: r[7] || [], av: r[8] }));
 const isHead = p => p.roles.some(x => /Başkan/.test(x) && !/Dekan/.test(x)) || p.roles.some(x => /Bölüm Başkanı/.test(x));
 people.forEach(p => { p.key = fold([p.u, p.n, p.a, ...p.roles, ...p.g.map(g => GROUPS[g])].join(' ')); });
@@ -242,6 +334,8 @@ function render() {
 $('q').addEventListener('input', e => { query = e.target.value; render(); });
 $('clear').addEventListener('click', () => { query = ''; $('q').value = ''; render(); $('q').focus(); });
 render();
+
+})();
 </script>
 </body>
 </html>
