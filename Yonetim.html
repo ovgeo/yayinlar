@@ -233,7 +233,7 @@ function kisiKartiKur(KD) {
 #kisi-dlg .kd-btn.p{background:var(--kc,#9B2441);color:#fff}
 #kisi-dlg .kd-btn.p:hover{filter:brightness(.88)}
 #kisi-dlg .kd-btn.ok{background:#640013;border-color:#640013;color:#fff}
-@media (prefers-reduced-motion:reduce){#kisi-dlg[open]{animation:none}}`;
+#kisi-dlg .kd-man{display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border:1px solid #bbb;border-radius:8px;font:600 16px system-ui,sans-serif;color:#363636;background:#fff}\n#kisi-dlg .kd-lw{flex:none;padding:0 20px}\n#kisi-dlg .kd-lw:not(:empty){padding-bottom:16px}\n@media (prefers-reduced-motion:reduce){#kisi-dlg[open]{animation:none}}`;
   document.head.appendChild(css);
 
   const dlg = document.createElement('dialog'); dlg.id = 'kisi-dlg'; dlg.setAttribute('aria-labelledby', 'kisi-ad');
@@ -242,8 +242,21 @@ function kisiKartiKur(KD) {
   const E = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 
   async function kopya(t) {
-    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) { /* çerçeve içinde engellenmiş olabilir */ }
-    try { const x = document.createElement('textarea'); x.value = t; x.setAttribute('readonly', ''); x.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(x); x.select(); x.setSelectionRange(0, t.length); const ok = document.execCommand('copy'); x.remove(); return ok; } catch (e) { return false; }
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) { /* iframe içinde izin verilmemiş olabilir */ }
+    // Açık modal dialog dışındaki her şey etkisizdir; bu yüzden geçici alanı dialog'un İÇİNE koyuyoruz.
+    try {
+      const host = dlg.open ? dlg : document.body;
+      const x = document.createElement('textarea'); x.value = t; x.setAttribute('readonly', '');
+      x.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0';
+      host.appendChild(x); x.focus(); x.select(); x.setSelectionRange(0, t.length);
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      x.remove(); return ok;
+    } catch (e) { return false; }
+  }
+  // Kopyalama olmazsa: metni görünür ve seçili bir kutuda göster, elle kopyalansın
+  function elleKopya(t, yer) {
+    let k = yer.querySelector('.kd-man'); if (!k) { k = E('input', 'kd-man'); k.readOnly = true; k.setAttribute('aria-label', 'Elle kopyalanacak metin'); yer.appendChild(k); }
+    k.value = t; k.hidden = false; k.focus(); k.select(); k.setSelectionRange(0, t.length);
   }
   function btn(t, cls) { const b = E('button', 'kd-btn' + (cls ? ' ' + cls : ''), t); b.type = 'button'; return b; }
   function bolum(h, items) { if (!items.length) return null; const s = E('div'); s.appendChild(E('h3', null, h)); const u = E('ul'); items.forEach(i => { const li = E('li'); if (typeof i === 'string') li.textContent = i; else { li.append(i[0]); if (i[1]) li.appendChild(E('span', 'kd-m', ' — ' + i[1])); } u.appendChild(li); }); s.appendChild(u); return s; }
@@ -285,15 +298,15 @@ function kisiKartiKur(KD) {
       const at = E('span', 'kd-addr'); const cp = btn('Kopyala'); box.append(at, cp);
       const sh = btn('E-postayı göster'); sh.setAttribute('aria-expanded', 'false');
       sh.addEventListener('click', () => { const o = box.hidden; box.hidden = !o; at.textContent = o ? addr : ''; sh.setAttribute('aria-expanded', String(o)); sh.textContent = o ? 'Gizle' : 'E-postayı göster'; });
-      let tm; cp.addEventListener('click', async () => { const ok = await kopya(addr); clearTimeout(tm); if (ok) { cp.classList.add('ok'); cp.textContent = 'Kopyalandı'; } else { cp.textContent = 'Elle kopyalayın'; const r = document.createRange(); r.selectNodeContents(at); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } tm = setTimeout(() => { cp.classList.remove('ok'); cp.textContent = 'Kopyala'; }, 2000); });
+      let tm; cp.addEventListener('click', async () => { const ok = await kopya(addr); clearTimeout(tm); if (ok) { cp.classList.add('ok'); cp.textContent = 'Kopyalandı'; } else { cp.textContent = 'Elle kopyalayın'; elleKopya(addr, box); } tm = setTimeout(() => { cp.classList.remove('ok'); cp.textContent = 'Kopyala'; }, 2500); });
       acts.appendChild(sh); body.appendChild(box);
     }
     const av = x.grup !== 'İdari' && x.avesis !== '-' && (x.avesis || x.eposta_adi);
     if (av) { const a = E('a', 'kd-btn p', 'Avesis profili'); a.href = 'https://avesis.bozok.edu.tr/' + av; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', x.ad_soyad + ' – Avesis profili (yeni sekmede açılır)'); acts.insertBefore(a, acts.firstChild); }
-    const lk = btn('Bağlantıyı kopyala'); let t2;
-    lk.addEventListener('click', async () => { const u = location.origin + location.pathname + '?kisi=' + id; const ok = await kopya(u); lk.textContent = ok ? 'Kopyalandı' : 'Kopyalanamadı'; clearTimeout(t2); t2 = setTimeout(() => { lk.textContent = 'Bağlantıyı kopyala'; }, 2000); });
+    const lw = E('div', 'kd-lw'); const lk = btn('Bağlantıyı kopyala'); let t2;
+    lk.addEventListener('click', async () => { const u = location.origin + location.pathname + '?kisi=' + id; const ok = await kopya(u); clearTimeout(t2); if (ok) { lk.classList.add('ok'); lk.textContent = 'Kopyalandı'; } else { lk.textContent = 'Elle kopyalayın'; elleKopya(u, lw); } t2 = setTimeout(() => { lk.classList.remove('ok'); lk.textContent = 'Bağlantıyı kopyala'; }, 2500); });
     acts.appendChild(lk);
-    dlg.append(top, body, acts);
+    dlg.append(top, body, acts, lw);
     if (!dlg.open) dlg.showModal();
   }
 
