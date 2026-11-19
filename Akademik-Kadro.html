@@ -58,6 +58,17 @@ ul { list-style: none; margin: 0; padding: 0; }
 .btn.done { background: var(--brand-ink); border-color: var(--brand-ink); color: #fff; }
 .ext { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; min-width: 74px; text-align: right; }
 .none { padding: 28px 0; color: var(--muted); text-align: center; }
+.cl { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cl .count { margin: 8px 0 0; }
+.tog { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-top: 4px; font-size: 0.875rem; color: var(--ink); cursor: pointer; }
+.tog input { width: 18px; height: 18px; accent-color: var(--brand); }
+/* compact view: names only, buttons live in the person card */
+.compact .p { padding: 8px 0; gap: 4px 12px; }
+.compact .inf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; }
+.compact .inf .u { min-width: 108px; }
+.compact .inf .a { margin: 0; }
+.compact .inf .roles { flex-basis: 100%; margin-top: 2px; }
+.compact .acts .btn, .compact .mail { display: none; }
 @media (max-width: 640px) {
   .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
   .chip { flex: none; }
@@ -76,7 +87,7 @@ ul { list-style: none; margin: 0; padding: 0; }
       <button class="x" id="clear" type="button" aria-label="Aramayı temizle">×</button>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Bölüm filtresi"></div>
-    <p class="count" id="count" aria-live="polite"></p>
+    <div class="cl"><p class="count" id="count" aria-live="polite"></p><label class="tog"><input type="checkbox" id="det"> Ayrıntılı görünüm</label></div>
   </div>
   <div id="list"></div>
 </div>
@@ -142,7 +153,9 @@ async function kadroYukle() {
     abd.forEach(a => { if (!a.b) a.b = ['', '—']; });
     return { id, ad: ad + ' Bölümü', b: bas ? kisi(bas.id) : ['', '—'], y: yrd ? kisi(yrd.id) : null, abd };
   });
-  return { K, G, byId, byName, birimler, kisi, roller: id => G.filter(x => x.id === id) };
+  const sonuc = { K, G, byId, byName, birimler, kisi, roller: id => G.filter(x => x.id === id) };
+  kisiKartiKur(sonuc);
+  return sonuc;
 }
 /* [unvan, ad, ...] dizilerindeki unvanı Sheet'teki güncel unvanla değiştirir (iç içe dizilerde de) */
 function kadroUnvanDuzelt(x, KD) {
@@ -151,6 +164,135 @@ function kadroUnvanDuzelt(x, KD) {
     x.forEach(y => kadroUnvanDuzelt(y, KD));
   }
   return x;
+}
+
+/* ===== KİŞİ KARTI =====
+   Sayfadaki, Sheet'te kayıtlı kişilerin adları tıklanabilir olur; tıklanınca küçük bir kart açılır.
+   ?kisi=<id> ile doğrudan açılır. Komisyon ve kurul üyelikleri aşağıdaki gömülü dizinden gelir. */
+const KISI_KURUL = {"ismail pirlanta": [["Fakülte Yönetim Kurulu", "Dekan (Başkan)"], ["Fakülte Kurulu", "Dekan (Başkan)"], ["Danışma Kurulu", "Dekan (Başkan)"]], "omer demir": [["Fakülte Yönetim Kurulu", "Profesör temsilcisi"], ["Fakülte Kurulu", "Profesör temsilcisi · Felsefe ve Din Bilimleri Bölüm Başkanı"], ["Danışma Kurulu", "Felsefe ve Din Bilimleri Bölüm Başkanı"], ["Vizyon-Misyon Değerlendirme Komisyonu", "Üye"], ["Uygulamalı Eğitimler Komisyonu", "Başkan"], ["Müfredat Hazırlama Komisyonu", "Üye"], ["Birim Personel Başvuru Ön Değerlendirme/Atama ve Yükseltme Komisyonu", "Asil üyeler"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Başkan"]], "mehmet tozluyurt": [["Fakülte Yönetim Kurulu", "Profesör temsilcisi"], ["Fakülte Kurulu", "Profesör temsilcisi · Temel İslam Bilimleri Bölüm Başkanı"], ["Danışma Kurulu", "Dekan Yardımcısı"], ["Vizyon-Misyon Değerlendirme Komisyonu", "Üye"], ["Müfredat Hazırlama Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Başkan"], ["Kütüphane Kitap Kabul Ön İnceleme ve Tahsis Komisyonu", "Başkan"], ["Kurum Arşiv Ayıklama ve İnceleme Komisyonu", "Başkan"], ["Birim Personel Başvuru Ön Değerlendirme/Atama ve Yükseltme Komisyonu", "Asil üyeler"], ["Akademik Teşvik Başvuru ve İnceleme Komisyonu", "Başkan"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Başkan"]], "gulhan turk": [["Fakülte Yönetim Kurulu", "Profesör temsilcisi"], ["Fakülte Kurulu", "Profesör temsilcisi"], ["Kültürel ve Teknik Gezi Komisyonu", "Üye"], ["Birim Personel Başvuru Ön Değerlendirme/Atama ve Yükseltme Komisyonu", "Asil üyeler"]], "sezai bekdemir": [["Fakülte Yönetim Kurulu", "Doçent temsilcisi"], ["Burs Komisyonu", "Üye"], ["Çift Anadal/Yan Dal Komisyonu", "Üye"], ["Müfredat Hazırlama Komisyonu", "Başkan"], ["Diyanet Akademi Koordinatörü", "Koordinatör"], ["Birim Personel Başvuru Ön Değerlendirme/Atama ve Yükseltme Komisyonu", "Yedek üye"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "selahattin yakut": [["Fakülte Yönetim Kurulu", "Doçent temsilcisi"], ["Fakülte Kurulu", "Doçent temsilcisi"], ["Vizyon-Misyon Değerlendirme Komisyonu", "Üye"], ["Bağımlılıkla Mücadele Komisyonu", "Üye"]], "yasin gokhan": [["Fakülte Yönetim Kurulu", "Dr. Öğretim Üyesi temsilcisi"], ["Danışma Kurulu", "Dekan Yardımcısı"], ["Türk Dünyası İle İlişkiler ve Orhun Koordinatörü Komisyonu", "Üye · Birim Temsilcisi"], ["Birim Bologna/AKTS Koordinatörü Komisyonu", "Üye"], ["Burs Komisyonu", "Başkan"], ["Kültürel ve Teknik Gezi Komisyonu", "Başkan"], ["Vizyon-Misyon Değerlendirme Komisyonu", "Başkan"], ["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Üye"], ["Birim Kantin Denetleme Komisyonu", "Başkan"], ["Kalite Birim Sorumlusu", "Başkan"], ["İş Sağlığı ve Güvenliği Komisyonu", "Başkan"], ["Olağanüstü Durum ve Değerlendirme Komisyonu", "Başkan"], ["Toplumsal Katkı Komisyonu", "Üye"], ["Sıfır Atık Yönetim Komisyonu", "Başkan"], ["Fakülte Taşınır Sayım Komisyonu", "Başkan"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Üyeler"]], "cuma aslan": [["Fakülte Yönetim Kurulu", "Raportör"], ["Fakülte Kurulu", "Raportör"], ["Danışma Kurulu", "Fakülte Sekreteri"], ["Birim Kantin Denetleme Komisyonu", "Üye"], ["İş Sağlığı ve Güvenliği Komisyonu", "Üye"], ["Olağanüstü Durum ve Değerlendirme Komisyonu", "Üye"], ["Sıfır Atık Yönetim Komisyonu", "Üye"], ["Fakülte Taşınır Sayım Komisyonu", "Üye"]], "abdulkadir dundar": [["Fakülte Kurulu", "İslam Tarihi ve Sanatları Bölüm Başkanı"], ["Müfredat Hazırlama Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "İslam Tarihi ve Sanatları Bölümü – Başkan"]], "ali binol": [["Fakülte Kurulu", "Doçent temsilcisi"], ["Akademik Teşvik Başvuru ve İnceleme Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "huseyin yuner": [["Fakülte Kurulu", "Dr. Öğretim Üyesi temsilcisi"], ["Burs Komisyonu", "Üye"], ["Vizyon-Misyon Değerlendirme Komisyonu", "Üye"]], "ismail bulut": [["Danışma Kurulu", "Hitit Üniversitesi İlahiyat Fakültesi Dekanı"]], "hasan yerkazan": [["Danışma Kurulu", "Amasya Üniversitesi İlahiyat Fakültesi Dekanı"]], "nuri adiguzel": [["Danışma Kurulu", "Yıldırım Beyazıt Üniversitesi İslami İlimler Fakültesi Dekanı"]], "aliya mutallimova": [["Danışma Kurulu", "Kalite Birim Temsilcisi"], ["Kültürel ve Teknik Gezi Komisyonu", "Üye"], ["Fakülte İnstagram Sorumlusu", "Sorumlu"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Felsefe ve Din Bilimleri)"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Üyeler"]], "nihat kok": [["Danışma Kurulu", "Yozgat İl Müftüsü"]], "ismail altinkaynak": [["Danışma Kurulu", "Yozgat İl Milli Eğitim Müdürü"]], "fettah tekdurak": [["Danışma Kurulu", "İmam Hatip (Yozgat İl Müftülüğü)"], ["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Üye"]], "umit sari": [["Danışma Kurulu", "Engelli Öğrenci Temsilcisi"]], "eminhan demir": [["Danışma Kurulu", "Fakülte Öğrenci Temsilcisi"]], "muhammed fatih duyar": [["Danışma Kurulu", "Mezun Öğrenci Temsilcisi"], ["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Üye"]], "tuncay tas": [["Danışma Kurulu", "Okul Müdürü (Milli Eğitim Müdürlüğü)"]], "atilla yilmaz": [["Danışma Kurulu", "Öğretmen (Milli Eğitim Müdürlüğü)"]], "huseyin durmaz": [["Danışma Kurulu", "Bilgisayar İşletmeni (İl Müftülüğü)"]], "yusuf akgul": [["Mezuniyet ve Not Tetkik Komisyonu", "Başkan"], ["Birim Bologna/AKTS Koordinatörü Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Başkan (Baş Editör)"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "talha erdem": [["Mezuniyet ve Not Tetkik Komisyonu", "Üye"], ["Sosyal ve Sportif Faaliyetler Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "munteha beki": [["Mezuniyet ve Not Tetkik Komisyonu", "Üye"], ["Birim Bologna/AKTS Koordinatörü Komisyonu", "Başkan"]], "nevriye sumeyra calik": [["Mezuniyet ve Not Tetkik Komisyonu", "Üye"], ["Arapça Hazırlık Sınıfı Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "hatice goktas": [["Mezuniyet ve Not Tetkik Komisyonu", "Üye"], ["Uluslararası Değişim Programları Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Felsefe ve Din Bilimleri)"]], "rahime eymen bakir": [["Mezuniyet ve Not Tetkik Komisyonu", "Üye"], ["Uluslararası Değişim Programları Komisyonu", "Üye"], ["Birim Akademik Veri Yönetimi Sistemi (Avesis) Komisyonu", "Üye"], ["Fakülte Web Yönetimi", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Felsefe ve Din Bilimleri)"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Raportörler"]], "alper cirpan": [["Mezuniyet ve Not Tetkik Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"], ["Arapça Hazırlık Sınıfı Komisyonu", "Üye"], ["Engelli Öğrenci Birimi Temsilcisi", "Temsilci"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Raportörler"]], "halil ozturk": [["Muafiyet ve İntibak Komisyonu", "Başkan"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "nilufer ates": [["Muafiyet ve İntibak Komisyonu", "Üye"], ["Çift Anadal/Yan Dal Komisyonu", "Üye"]], "adem yener": [["Muafiyet ve İntibak Komisyonu", "Üye"], ["Arapça Hazırlık Sınıfı Komisyonu", "Üye"], ["Kütüphane Kitap Kabul Ön İnceleme ve Tahsis Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "melek cosgun solak": [["Muafiyet ve İntibak Komisyonu", "Üye"], ["Uygulamalı Eğitimler Komisyonu", "Üye"]], "elif bilge": [["Muafiyet ve İntibak Komisyonu", "Üye"], ["Bağımlılıkla Mücadele Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"]], "anas mslm": [["Muafiyet ve İntibak Komisyonu", "Üye"], ["Sosyal ve Sportif Faaliyetler Komisyonu", "Başkan"], ["Arapça Hazırlık Sınıfı Komisyonu", "Üye"], ["Kütüphane Kitap Kabul Ön İnceleme ve Tahsis Komisyonu", "Üye"]], "nesibe ortac": [["Muafiyet ve İntibak Komisyonu", "Üye"], ["Fakülte Web Yönetimi", "Üye"]], "ihsan ovge ozturk": [["Uluslararası Değişim Programları Komisyonu", "Başkan"], ["Fakülte Web Yönetimi", "Başkan · Fakülte Web Sorumlusu"], ["Çift Anadal/Yan Dal Komisyonu", "Başkan"]], "emre karadavut": [["Uluslararası Değişim Programları Komisyonu", "Üye"], ["Kültürel ve Teknik Gezi Komisyonu", "Üye"], ["Fakülte Web Yönetimi", "Üye"], ["Müfredat Hazırlama Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Editör, Alan Editörü, Dil Editörü"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (İslam Tarihi ve Sanatları)"], ["Ölçme ve Değerlendirme Komisyonu", "İslam Tarihi ve Sanatları Bölümü – Raportörler"]], "dadas mutallim": [["Türk Dünyası İle İlişkiler ve Orhun Koordinatörü Komisyonu", "Başkan · Fakülte Temsilcisi"], ["Birim Bologna/AKTS Koordinatörü Komisyonu", "Üye"], ["Birim Akademik Veri Yönetimi Sistemi (Avesis) Komisyonu", "Başkan"], ["Ortak (5İ) Dersler ve Alan Dışı Seçmeli Dersler Birim Koordinatörü", "Başkan"], ["Kalite Birim Sorumlusu", "Üye"], ["İş Sağlığı ve Güvenliği Komisyonu", "Üye"], ["Kurum Arşiv Ayıklama ve İnceleme Komisyonu", "Üye"], ["Toplumsal Katkı Komisyonu", "Üye"], ["Akademik Teşvik Başvuru ve İnceleme Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "İslam Tarihi ve Sanatları Bölümü – Üye"]], "abdulali aliev": [["Sosyal ve Sportif Faaliyetler Komisyonu", "Üye"], ["Burs Komisyonu", "Üye"], ["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Üyeler"]], "ibrahim kilincer": [["Burs Komisyonu", "Üye"], ["Arapça Hazırlık Sınıfı Komisyonu", "Başkan"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "yasin cenan": [["Kültürel ve Teknik Gezi Komisyonu", "Üye"], ["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Başkan"], ["Kariyer Merkezi Koordinatörü", "Koordinatör"], ["Toplumsal Katkı Komisyonu", "Başkan"]], "leyla sipahi": [["Fakülte Web Yönetimi", "Üye"], ["Birim Kantin Denetleme Komisyonu", "Üye"], ["İş Sağlığı ve Güvenliği Komisyonu", "Üye"], ["Olağanüstü Durum ve Değerlendirme Komisyonu", "Üye"], ["Kurum Arşiv Ayıklama ve İnceleme Komisyonu", "Üye"], ["Fakülte Taşınır Sayım Komisyonu", "Üye"]], "tugba sahbaz altinsoy": [["Vizyon-Misyon Değerlendirme Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"], ["Sıfır Atık Yönetim Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (İslam Tarihi ve Sanatları)"], ["Ölçme ve Değerlendirme Komisyonu", "İslam Tarihi ve Sanatları Bölümü – Raportörler"]], "veysel cekerek": [["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Üye"]], "ercan altindag": [["Mezun Öğrencileri Tespit ve Takip Komisyonu", "Üye"]], "fatma gocmen": [["Çift Anadal/Yan Dal Komisyonu", "Üye · Rektörlük Birim Temsilcisi"], ["Bağımlılıkla Mücadele Komisyonu", "Başkan"], ["Uygulamalı Eğitimler Komisyonu", "Üye"], ["Öğretmenlik Uygulama Koordinatörü", "Koordinatör"], ["Fakülte Ulusal Staj Sorumlusu", "Sorumlu"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Felsefe ve Din Bilimleri)"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Üyeler"]], "edibe boyraz": [["Çift Anadal/Yan Dal Komisyonu", "Üye"], ["Bağımlılıkla Mücadele Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "yeter ozdemir": [["Çift Anadal/Yan Dal Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Raportörler"]], "yasin bedir": [["Bağımlılıkla Mücadele Komisyonu", "Üye"], ["Kurum Arşiv Ayıklama ve İnceleme Komisyonu", "Üye"], ["Toplumsal Katkı Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "esma aygun yakin": [["Uygulamalı Eğitimler Komisyonu", "Üye"], ["Ders ve Sınav Hazırlama Komisyonu", "Üye"], ["Fakülte Twitter Sorumlusu", "Sorumlu"], ["Sıfır Atık Yönetim Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Felsefe ve Din Bilimleri Bölümü – Raportörler"]], "habip uz": [["Ortak (5İ) Dersler ve Alan Dışı Seçmeli Dersler Birim Koordinatörü", "Üye"], ["Arapça Hazırlık Sınıfı Komisyonu", "Üye"], ["Kurum Arşiv Ayıklama ve İnceleme Komisyonu", "Üye"], ["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "murat oktem": [["Ders ve Sınav Hazırlama Komisyonu", "Üye"]], "yunus cakir": [["Arapça Hazırlık Sınıfı Komisyonu", "Üye"], ["Sıfır Atık Yönetim Komisyonu", "Üye"]], "mehmet ozudogru": [["Kütüphane Kitap Kabul Ön İnceleme ve Tahsis Komisyonu", "Üye"], ["Toplumsal Katkı Komisyonu", "Üye"], ["Ölçme ve Değerlendirme Komisyonu", "Temel İslam Bilimleri Bölümü – Üyeler"]], "seda kuru": [["Kurum Arşiv Ayıklama ve İnceleme Komisyonu", "Üye"]], "semra yilmaz": [["Sıfır Atık Yönetim Komisyonu", "Üye"]], "nezaket kizilay": [["Sıfır Atık Yönetim Komisyonu", "Üye"]], "ceyda gurman": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "abdulaziz seker": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "munevver bayram": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "safiye inceyilmaz mslm": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "humeyra ozturk": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "muhammed mazlum": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Temel İslam Bilimleri)"]], "ylmaz ceylan": [["Dergi (BOZİFDER) Komisyonu", "Alan editörleri (Felsefe ve Din Bilimleri)"]]};
+function kisiKartiKur(KD) {
+  if (document.getElementById('kisi-dlg')) return;
+  const COLS = { 'Temel İslam Bilimleri': '#9B2441', 'Felsefe ve Din Bilimleri': '#1F6F6B', 'İslam Tarihi ve Sanatları': '#8F5F00' };
+  const css = document.createElement('style');
+  css.textContent = `
+.kisi{display:inline;min-height:0;min-width:0;width:auto;margin:0;padding:0;border:0;border-bottom:1px dotted currentColor;border-radius:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;cursor:pointer}
+.kisi:hover{color:#9B2441;border-bottom-style:solid}
+.kisi:focus-visible{outline:3px solid #1b1b1b;outline-offset:2px}
+#kisi-dlg{border:0;border-radius:16px;padding:0;width:min(480px,calc(100% - 24px));max-height:calc(100% - 28px);box-shadow:0 20px 60px rgba(0,0,0,.35);font-family:'Open Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:1rem;line-height:1.45;color:#363636;background:#fff;overflow:hidden}
+#kisi-dlg[open]{display:flex;flex-direction:column;animation:kdin .3s cubic-bezier(.2,1.1,.4,1)}
+#kisi-dlg::backdrop{background:rgba(20,10,14,.55)}
+@keyframes kdin{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+#kisi-dlg .kd-top{position:relative;flex:none;padding:18px 56px 16px 20px;background:var(--kc,#9B2441);color:#fff}
+#kisi-dlg .kd-u{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.92}
+#kisi-dlg h2{margin:2px 0 0;font-size:1.375rem;line-height:1.25;letter-spacing:0;text-transform:none;color:#fff}
+#kisi-dlg .kd-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:8px;background:none;color:#fff;font-size:1.625rem;line-height:1;cursor:pointer}
+#kisi-dlg .kd-x:hover{background:rgba(255,255,255,.18)}
+#kisi-dlg .kd-x:focus-visible,#kisi-dlg .kd-btn:focus-visible{outline:3px solid #1b1b1b;outline-offset:2px}
+#kisi-dlg .kd-body{flex:1;min-height:0;overflow:auto;padding:6px 20px 4px}
+#kisi-dlg h3{margin:14px 0 4px;font-size:.6875rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--kc,#9B2441)}
+#kisi-dlg ul{list-style:none;margin:0;padding:0}
+#kisi-dlg li{padding:3px 0}
+#kisi-dlg .kd-m{color:#5F5F5F;font-size:.875rem}
+#kisi-dlg .kd-mail{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px;padding:6px 6px 6px 12px;border-radius:8px;background:#FFF5F6}
+#kisi-dlg .kd-mail[hidden]{display:none}
+#kisi-dlg .kd-addr{font-weight:600;word-break:break-all;user-select:all;-webkit-user-select:all}
+#kisi-dlg .kd-acts{flex:none;display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 18px}
+#kisi-dlg .kd-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--kc,#9B2441);border-radius:8px;background:#fff;color:#640013;font:600 .875rem 'Open Sans',system-ui,sans-serif;text-decoration:none;cursor:pointer}
+#kisi-dlg .kd-btn:hover{background:#FFF5F6}
+#kisi-dlg .kd-btn.p{background:var(--kc,#9B2441);color:#fff}
+#kisi-dlg .kd-btn.p:hover{filter:brightness(.88)}
+#kisi-dlg .kd-btn.ok{background:#640013;border-color:#640013;color:#fff}
+@media (prefers-reduced-motion:reduce){#kisi-dlg[open]{animation:none}}`;
+  document.head.appendChild(css);
+
+  const dlg = document.createElement('dialog'); dlg.id = 'kisi-dlg'; dlg.setAttribute('aria-labelledby', 'kisi-ad');
+  document.body.appendChild(dlg);
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  const E = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+
+  async function kopya(t) {
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) { /* çerçeve içinde engellenmiş olabilir */ }
+    try { const x = document.createElement('textarea'); x.value = t; x.setAttribute('readonly', ''); x.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(x); x.select(); x.setSelectionRange(0, t.length); const ok = document.execCommand('copy'); x.remove(); return ok; } catch (e) { return false; }
+  }
+  function btn(t, cls) { const b = E('button', 'kd-btn' + (cls ? ' ' + cls : ''), t); b.type = 'button'; return b; }
+  function bolum(h, items) { if (!items.length) return null; const s = E('div'); s.appendChild(E('h3', null, h)); const u = E('ul'); items.forEach(i => { const li = E('li'); if (typeof i === 'string') li.textContent = i; else { li.append(i[0]); if (i[1]) li.appendChild(E('span', 'kd-m', ' — ' + i[1])); } u.appendChild(li); }); s.appendChild(u); return s; }
+
+  function ac(id) {
+    const x = KD.byId[id]; if (!x) return;
+    const col = COLS[x.bolum] || '#9B2441';
+    dlg.style.setProperty('--kc', col); dlg.replaceChildren();
+    const top = E('div', 'kd-top');
+    if (x.unvan) top.appendChild(E('div', 'kd-u', x.unvan));
+    const h = E('h2', null, x.ad_soyad); h.id = 'kisi-ad'; top.appendChild(h);
+    const cl = E('button', 'kd-x', '×'); cl.type = 'button'; cl.setAttribute('aria-label', 'Kapat'); cl.addEventListener('click', () => dlg.close()); top.appendChild(cl);
+    const body = E('div', 'kd-body');
+    const G = KD.roller(id);
+    const gorev = [], abd = [];
+    G.forEach(g => {
+      if (g.birim_turu === 'Dekanlık') gorev.push(g.rol);
+      else if (g.birim_turu === 'Bölüm') gorev.push(g.birim + ' Bölümü ' + g.rol.replace('Bölüm ', '').replace(/^Başkanı$/, 'Başkanı'));
+      else if (g.birim_turu === 'Anabilim Dalı') abd.push([g.birim + ' Anabilim Dalı', g.rol === 'Üye' ? 'Üye' : g.rol]);
+    });
+    const parts = [];
+    if (x.grup === 'İdari') { if (x.alan_gorev) parts.push(bolum('Görev', [x.alan_gorev])); }
+    else {
+      if (x.bolum) parts.push(bolum('Bölüm', [x.bolum + ' Bölümü']));
+      if (abd.length) parts.push(bolum('Anabilim dalı', abd)); else if (x.alan_gorev) parts.push(bolum('Alan', [x.alan_gorev]));
+    }
+    if (gorev.length) parts.push(bolum('Görevler', gorev));
+    const kur = KISI_KURUL[kFold(x.ad_soyad)] || [];
+    if (kur.length) parts.push(bolum('Kurul ve komisyonlar', kur.map(k => [k[0], k[1]])));
+    const ilet = [];
+    if (x.dahili) ilet.push('Dahili ' + x.dahili);
+    const ib = bolum('İletişim', ilet); if (ib) parts.push(ib);
+    parts.filter(Boolean).forEach(p => body.appendChild(p));
+    // e-posta: adres yalnızca burada, istek üzerine kurulur
+    const acts = E('div', 'kd-acts');
+    if (x.eposta_adi && x.eposta_alani) {
+      const addr = x.eposta_adi + '@' + x.eposta_alani;
+      const box = E('div', 'kd-mail'); box.hidden = true;
+      const at = E('span', 'kd-addr'); const cp = btn('Kopyala'); box.append(at, cp);
+      const sh = btn('E-postayı göster'); sh.setAttribute('aria-expanded', 'false');
+      sh.addEventListener('click', () => { const o = box.hidden; box.hidden = !o; at.textContent = o ? addr : ''; sh.setAttribute('aria-expanded', String(o)); sh.textContent = o ? 'Gizle' : 'E-postayı göster'; });
+      let tm; cp.addEventListener('click', async () => { const ok = await kopya(addr); clearTimeout(tm); if (ok) { cp.classList.add('ok'); cp.textContent = 'Kopyalandı'; } else { cp.textContent = 'Elle kopyalayın'; const r = document.createRange(); r.selectNodeContents(at); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } tm = setTimeout(() => { cp.classList.remove('ok'); cp.textContent = 'Kopyala'; }, 2000); });
+      acts.appendChild(sh); body.appendChild(box);
+    }
+    const av = x.grup !== 'İdari' && x.avesis !== '-' && (x.avesis || x.eposta_adi);
+    if (av) { const a = E('a', 'kd-btn p', 'Avesis profili'); a.href = 'https://avesis.bozok.edu.tr/' + av; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', x.ad_soyad + ' – Avesis profili (yeni sekmede açılır)'); acts.insertBefore(a, acts.firstChild); }
+    const lk = btn('Bağlantıyı kopyala'); let t2;
+    lk.addEventListener('click', async () => { const u = location.origin + location.pathname + '?kisi=' + id; const ok = await kopya(u); lk.textContent = ok ? 'Kopyalandı' : 'Kopyalanamadı'; clearTimeout(t2); t2 = setTimeout(() => { lk.textContent = 'Bağlantıyı kopyala'; }, 2000); });
+    acts.appendChild(lk);
+    dlg.append(top, body, acts);
+    if (!dlg.open) dlg.showModal();
+  }
+
+  // adları tıklanabilir yap
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const alt = [];
+  KD.K.forEach(x => { if (x.ad_soyad.length < 5) return; if (x.unvan) alt.push([x.unvan + ' ' + x.ad_soyad, x.id]); alt.push([x.ad_soyad, x.id]); });
+  alt.sort((a, b) => b[0].length - a[0].length);
+  const MAP = new Map(alt);
+  const RE = new RegExp(alt.map(a => esc(a[0])).join('|'), 'g'), TEST = new RegExp(alt.map(a => esc(a[0])).join('|'));
+  const SKIP = 'svg,button,a,summary,label,select,option,textarea,input,script,style,dialog,noscript,.kisi,[contenteditable]';
+  function tara(root) {
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode(n) { const p = n.parentElement; if (!p || p.closest(SKIP)) return NodeFilter.FILTER_REJECT; return TEST.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; } });
+    const list = []; while (w.nextNode()) list.push(w.currentNode);
+    list.forEach(n => {
+      const s = n.nodeValue, fr = document.createDocumentFragment(); let last = 0, m; RE.lastIndex = 0;
+      while ((m = RE.exec(s))) {
+        if (m.index > last) fr.appendChild(document.createTextNode(s.slice(last, m.index)));
+        const b = E('button', 'kisi', m[0]); b.type = 'button'; b.dataset.id = MAP.get(m[0]); b.setAttribute('aria-haspopup', 'dialog'); fr.appendChild(b); last = m.index + m[0].length;
+      }
+      if (last < s.length) fr.appendChild(document.createTextNode(s.slice(last)));
+      n.parentNode.replaceChild(fr, n);
+    });
+  }
+  let tm = null;
+  const mo = new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { mo.disconnect(); tara(document.body); mo.observe(document.body, { childList: true, subtree: true, characterData: true }); }, 60); });
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.kisi'); if (b) { e.preventDefault(); ac(b.dataset.id); } });
+  tara(document.body); mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+  const q = new URLSearchParams(location.search).get('kisi');
+  if (q) setTimeout(() => ac(q), 400);
 }
 
 
@@ -270,7 +412,7 @@ async function copyText(t) {
   } catch (e) { return false; }
 }
 function card(p) {
-  const li = el('li', 'p'), info = el('div');
+  const li = el('li', 'p'), info = el('div', 'inf');
   if (p.u) info.appendChild(el('div', 'u', p.u));
   info.appendChild(el('div', 'n', p.n));
   if (p.a) info.appendChild(el('div', 'a', p.a));
@@ -315,7 +457,7 @@ function render() {
   const q = fold(query.trim()).split(/\s+/).filter(Boolean);
   const match = p => q.every(t => p.key.includes(t));
   const shown = people.filter(p => (filter === 'all' || p.g.includes(filter)) && match(p));
-  const list = $('list'); list.textContent = '';
+  const list = $('list'); list.textContent = ''; list.classList.toggle('compact', !$('det').checked);
   const groups = filter === 'all' ? ORDER : [filter];
   groups.forEach(g => {
     const mem = sorted(shown.filter(p => filter === 'all' ? p.g[0] === g : true), g);
@@ -331,6 +473,7 @@ function render() {
 [['all', 'Tümü'], ...ORDER.map(g => [g, GROUPS[g]])].forEach(([f, t]) => {
   const b = el('button', 'chip', t); b.type = 'button'; b.dataset.f = f; b.addEventListener('click', () => { filter = f; render(); }); $('chips').appendChild(b);
 });
+$('det').addEventListener('change', render);
 $('q').addEventListener('input', e => { query = e.target.value; render(); });
 $('clear').addEventListener('click', () => { query = ''; $('q').value = ''; render(); $('q').focus(); });
 render();
