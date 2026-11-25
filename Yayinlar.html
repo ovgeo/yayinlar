@@ -156,8 +156,7 @@ function madde(y) {
   if (y.tur) r.appendChild(el('span', 'tag', y.tur));
   (y.indeks || []).forEach(d => r.appendChild(el('span', 'tag k', d)));
   if (y.doi) { const a = el('a', 'lnk', 'DOI'); a.href = 'https://doi.org/' + y.doi; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', 'DOI bağlantısı (yeni sekmede açılır)'); r.appendChild(a); }
-  if (y.fak.length) r.appendChild(el('span', 'fk', 'Fakülte: ' + y.fak.join(', ')));
-  li.appendChild(r);
+  if (r.childNodes.length) li.appendChild(r);
   return li;
 }
 function ciz() {
