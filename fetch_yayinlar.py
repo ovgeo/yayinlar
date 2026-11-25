@@ -115,7 +115,8 @@ def sayfa_ayristir(html, base):
     for el in ana.descendants:
         if getattr(el, "name", None) in ("h1", "h2", "h3", "h4", "h5", "h6"):
             ht = el.get_text(" ", strip=True)
-            if not re.match(r"^\d+\s*[.)]", ht) and not el.find("a", href=re.compile(r"/yayin/")):
+            # bölüm başlıkları (Articles, Books...) h1/h2'dir; h3-h5 yayın başlığı/yazar/kaynak satırıdır
+            if el.name in ("h1", "h2") and len(ht) < 90 and not re.match(r"^\d+\s*[.)]", ht) and not el.find("a", href=re.compile(r"/yayin/")):
                 tb = tur_basliktan(ht)
                 if tb:
                     bolum = tb
@@ -124,7 +125,7 @@ def sayfa_ayristir(html, base):
             continue
         href = el.get("href", "")
         m = re.search(r"/yayin/([0-9a-fA-F-]{8,})", href)
-        baslik = el.get_text(" ", strip=True)
+        baslik = re.sub(r"^\d+\s*[.)]\s*", "", el.get_text(" ", strip=True)).strip()
         if not m or not baslik or m.group(1) in goruldu:
             continue
         # tek yayın bağlantısı içeren en geniş kapsayıcıyı bul
@@ -137,9 +138,22 @@ def sayfa_ayristir(html, base):
         satirlar = satir_listesi(kap)
         # numara ve başlığı at
         satirlar = [re.sub(r"^\d+\s*[.)]\s*", "", s) for s in satirlar]
-        satirlar = [s for s in satirlar if s and s != baslik and not GURULTU.match(s)]
+        fb = fold(baslik)
+        satirlar = [s for s in satirlar if s and fold(s) != fb and not GURULTU.match(s)]
+        if len(satirlar) < 2:
+            # başlık, yazar ve kaynak kardeş öğeler olarak ayrı duruyorsa: sonraki kardeşlerden topla
+            for sib in kap.next_siblings:
+                if not getattr(sib, "name", None):
+                    continue
+                if sib.name in ("h1", "h2", "h3") or sib.find("a", href=re.compile(r"/yayin/")) or (sib.name == "a" and "/yayin/" in sib.get("href", "")):
+                    break
+                satirlar += [re.sub(r"^\d+\s*[.)]\s*", "", x) for x in satir_listesi(sib)]
+                satirlar = [x for x in satirlar if x and fold(x) != fb and not GURULTU.match(x)]
+                if len(satirlar) >= 2 and re.search(r"(19|20)\d\d", " ".join(satirlar[1:])):
+                    break
         yazar = satirlar[0] if satirlar else ""
-        venue = satirlar[1] if len(satirlar) > 1 else ""
+        diger = satirlar[1:]
+        venue = next((x for x in diger if re.search(r"(?<!\d)(19|20)\d\d(?!\d)", x)), diger[0] if diger else "")
         # yazar satırı yoksa (ilk satır kaynak gibi görünüyorsa) düzelt
         if yazar and re.search(r"(19|20)\d\d", yazar) and not venue:
             venue, yazar = yazar, ""
